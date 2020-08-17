@@ -1,0 +1,6 @@
+---
+language: ruby
+cache: bundler
+rvm:
+  - ruby-head
+before_install: gem install bundler -v 2.1.4
