@@ -1,5 +1,5 @@
 # evt
-A low-level Event Handler designed for Ruby 3 Scheduler
+A Handcrafted Low-Level Event Handler designed as Ruby 3 Scheduler. 
 
 ```ruby
 require 'evt'
