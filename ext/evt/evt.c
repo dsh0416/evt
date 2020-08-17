@@ -18,8 +18,7 @@ void Init_evt_ext()
 }
 
 
-#if defined(__linux__) // Do more checks for epoll
-// Use epoll
+#if defined(__linux__) // TODO: Do more checks for using epoll
 #include <sys/epoll.h>
 #define EPOLL_MAX_EVENTS 65535
 

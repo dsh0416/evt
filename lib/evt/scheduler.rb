@@ -9,6 +9,11 @@ rescue LoadError
   # Ignore.
 end
 
+class IO
+  WAIT_READABLE = 1
+  WAIT_WRITABLE = 3
+end
+
 class Scheduler
   def initialize
     @readable = {}
@@ -92,7 +97,7 @@ class Scheduler
 
   def wait_writable(io)
     @writable[io] = Fiber.current
-    self.register(io, IO::WAIT_WRITABLE)
+    self.register(io, IO::WaitReadable)
     Fiber.yield
     @writable.delete(io)
     self.deregister(io)
