@@ -15,13 +15,10 @@ class EvtTest < Minitest::Test
       hit += 1
     end
 
-    main = Fiber.new do
-      wr.write('Hello World')
-      fiber.resume
-      scheduler.run
-    end
+    wr.write('Hello World')
+    fiber.resume
+    scheduler.run
 
-    main.resume
     assert_equal hit, 1
   end
 end
