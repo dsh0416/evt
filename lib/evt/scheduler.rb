@@ -97,7 +97,7 @@ class Scheduler
 
   def wait_writable(io)
     @writable[io] = Fiber.current
-    self.register(io, IO::WaitReadable)
+    self.register(io, IO::WAIT_READABLE)
     Fiber.yield
     @writable.delete(io)
     self.deregister(io)
