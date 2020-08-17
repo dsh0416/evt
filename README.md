@@ -1,7 +1,7 @@
 # evt
 A low-level Event Handler designed for Ruby 3 Scheduler
 
-```
+```ruby
 rd, wr = IO.pipe
 Thread.current.scheduler = Scheduler.new
 
