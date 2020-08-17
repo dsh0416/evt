@@ -42,7 +42,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     } else if (ruby_interest & writable) {
         event.events |= EPOLLOUT;
     }
-    event.epoll_data_t = (void*) io;
+    event.data.ptr = (void*) io;
 
     epoll_ctl(epfd, EPOLL_CTL_ADD, fd, event);
     return Qnil;
@@ -75,10 +75,10 @@ VALUE method_scheduler_wait(VALUE self) {
     for (i = 0; i < n; i++) {
         event_flag = events[i].events;
         if (event_flag & EPOLLIN) {
-            obj_io = (VALUE) events[i].epoll_data;
+            obj_io = (VALUE) events[i].epoll_data.ptr;
             rb_funcall(readables, id_push, 1, obj_io);
         } else if (event_flag & EPOLLOUT) {
-            obj_io = (VALUE) events[i].epoll_data;
+            obj_io = (VALUE) events[i].epoll_data.ptr;
             rb_funcall(writables, id_push, 1, obj_io);
         }
     }
