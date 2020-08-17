@@ -7,7 +7,7 @@ class EvtTest < Minitest::Test
 
   def test_basic
     rd, wr = IO.pipe
-    scheduler = Scheduler.new
+    scheduler = Evt::Scheduler.new
 
     hit = 0
     fiber = Fiber.new do

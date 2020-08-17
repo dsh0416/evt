@@ -2,8 +2,10 @@
 A low-level Event Handler designed for Ruby 3 Scheduler
 
 ```ruby
+require 'evt'
+
 rd, wr = IO.pipe
-Thread.current.scheduler = Scheduler.new
+Thread.current.scheduler = Evt::Scheduler.new
 
 hit = 0
 fiber = Fiber.new do

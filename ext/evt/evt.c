@@ -1,5 +1,6 @@
 #include <ruby.h>
 
+VALUE Evt = Qnil;
 VALUE Scheduler = Qnil;
 
 void Init_evt_ext();
@@ -10,11 +11,12 @@ VALUE method_scheduler_wait(VALUE self);
 
 void Init_evt_ext()
 {
-  Scheduler = rb_define_class("Scheduler", rb_cObject);
-  rb_define_method(Scheduler, "init_selector", method_scheduler_init, 0);
-  rb_define_method(Scheduler, "register", method_scheduler_register, 2);
-  rb_define_method(Scheduler, "deregister", method_scheduler_deregister, 1);
-  rb_define_method(Scheduler, "wait", method_scheduler_wait, 0);
+    Evt = rb_define_module("Evt");
+    Scheduler = rb_define_class_under(Evt, "Scheduler", rb_cObject);
+    rb_define_method(Scheduler, "init_selector", method_scheduler_init, 0);
+    rb_define_method(Scheduler, "register", method_scheduler_register, 2);
+    rb_define_method(Scheduler, "deregister", method_scheduler_deregister, 1);
+    rb_define_method(Scheduler, "wait", method_scheduler_wait, 0);
 }
 
 

@@ -9,12 +9,7 @@ rescue LoadError
   # Ignore.
 end
 
-class IO
-  WAIT_READABLE = 1
-  WAIT_WRITABLE = 3
-end
-
-class Scheduler
+class Evt::Scheduler
   def initialize
     @readable = {}
     @writable = {}
@@ -162,9 +157,7 @@ class Scheduler
 
   def fiber(&block)
     fiber = Fiber.new(blocking: false, &block)
-
     fiber.resume
-
     return fiber
   end
 end
