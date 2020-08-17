@@ -44,7 +44,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     }
     event.epoll_data_t = (void*) io;
 
-    epoll_ctl(epfd, EPOLL_CTL_ADD, fd, event); // Require Linux 2.6.9 for NULL event.
+    epoll_ctl(epfd, EPOLL_CTL_ADD, fd, event);
     return Qnil;
 }
 
