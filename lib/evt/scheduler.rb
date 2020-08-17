@@ -17,7 +17,7 @@ class Scheduler
     @blocking = []
 
     @ios = ObjectSpace::WeakMap.new
-    self.init
+    init_selector
   end
 
   attr :readable

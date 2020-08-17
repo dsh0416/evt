@@ -11,19 +11,34 @@ VALUE method_scheduler_wait(VALUE self);
 void Init_evt_ext()
 {
   Scheduler = rb_define_class("Scheduler", rb_cObject);
-  rb_define_method(Scheduler, "init", method_scheduler_init, 0);
+  rb_define_method(Scheduler, "init_selector", method_scheduler_init, 0);
   rb_define_method(Scheduler, "register", method_scheduler_register, 2);
   rb_define_method(Scheduler, "deregister", method_scheduler_deregister, 1);
   rb_define_method(Scheduler, "wait", method_scheduler_wait, 0);
 }
 
-// #if defined(_WIN32)
-//     // Include IOCP
-// #elif defined(__linux__)
-//     // Use epoll
-// #elif defined(__FreeBSD__)
-//     // Use kqueue
-// #else
+
+#if defined(__linux__) // Do more checks for epoll
+// Use epoll
+#include <sys/epoll.h>
+
+VALUE method_scheduler_init(VALUE self) {
+    rb_iv_set(self, "@epfd", INT2NUM(epoll_create(1))); // Size of epoll is ignored after Linux 2.6.8.
+    return Qnil;
+}
+
+VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+    return Qnil;
+}
+
+VALUE method_scheduler_deregister(VALUE self, VALUE io) {
+    ID id_fileno = rb_intern("fileno");
+    int epfd = NUM2INT(rb_iv_get(self, "@epfd"));
+    int fd = NUM2INT(rb_funcall(io, id_fileno));
+    epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL); // Require Linux 2.6.9 for NULL event.
+    return Qnil;
+}
+#else
 // Fallback to IO.select
 VALUE method_scheduler_init(VALUE self) {
     return Qnil;
@@ -53,4 +68,4 @@ VALUE method_scheduler_wait(VALUE self) {
 
     return rb_funcall(rb_cIO, id_select, 4, readable_keys, writable_keys, rb_ary_new(), next_timeout);
 }
-// #endif
+#endif
