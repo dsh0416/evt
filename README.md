@@ -11,10 +11,9 @@ fiber = Fiber.new do
     hit += 1
 end
 
-
 wr.write('Hello World')
 fiber.resume
 Thread.current.scheduler.run
 
-assert_equal hit, 1
+puts hit # => 1
 ```
