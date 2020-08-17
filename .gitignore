@@ -8,3 +8,4 @@
 /tmp/
 /*.gem
 /lib/*.bundle
+/lib/*.so

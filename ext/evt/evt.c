@@ -31,7 +31,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     struct epoll_event event;
     ID id_fileno = rb_intern("fileno");
     int epfd = NUM2INT(rb_iv_get(self, "@epfd"));
-    int fd = NUM2INT(rb_funcall(io, id_fileno));
+    int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
     int ruby_interest = NUM2INT(interest);
     int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_READABLE")));
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_WRITABLE")));
@@ -43,14 +43,14 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     }
     event.data.ptr = (void*) io;
 
-    epoll_ctl(epfd, EPOLL_CTL_ADD, fd, event);
+    epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
     return Qnil;
 }
 
 VALUE method_scheduler_deregister(VALUE self, VALUE io) {
     ID id_fileno = rb_intern("fileno");
     int epfd = NUM2INT(rb_iv_get(self, "@epfd"));
-    int fd = NUM2INT(rb_funcall(io, id_fileno));
+    int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
     epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL); // Require Linux 2.6.9 for NULL event.
     return Qnil;
 }
@@ -66,18 +66,18 @@ VALUE method_scheduler_wait(VALUE self) {
     readables = rb_ary_new();
     writables = rb_ary_new();
 
-    epoll_event* events = (epoll_event*) xmalloc(sizeof(epoll_event) * EPOLL_MAX_EVENTS);
+    struct epoll_event* events = (struct epoll_event*) xmalloc(sizeof(struct epoll_event) * EPOLL_MAX_EVENTS);
     
     n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, next_timeout);
-    assert(n >= 0) // TODO: edit error handling here
+    // Check if n > 0
 
     for (i = 0; i < n; i++) {
         event_flag = events[i].events;
         if (event_flag & EPOLLIN) {
-            obj_io = (VALUE) events[i].epoll_data.ptr;
+            obj_io = (VALUE) events[i].data.ptr;
             rb_funcall(readables, id_push, 1, obj_io);
         } else if (event_flag & EPOLLOUT) {
-            obj_io = (VALUE) events[i].epoll_data.ptr;
+            obj_io = (VALUE) events[i].data.ptr;
             rb_funcall(writables, id_push, 1, obj_io);
         }
     }
