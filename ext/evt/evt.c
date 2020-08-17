@@ -8,11 +8,13 @@ VALUE method_scheduler_init(VALUE self);
 VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest);
 VALUE method_scheduler_deregister(VALUE self, VALUE io);
 VALUE method_scheduler_wait(VALUE self);
+VALUE method_scheduler_backend();
 
 void Init_evt_ext()
 {
     Evt = rb_define_module("Evt");
     Scheduler = rb_define_class_under(Evt, "Scheduler", rb_cObject);
+    rb_define_singleton_method(Scheduler, "backend", method_scheduler_backend, 0);
     rb_define_method(Scheduler, "init_selector", method_scheduler_init, 0);
     rb_define_method(Scheduler, "register", method_scheduler_register, 2);
     rb_define_method(Scheduler, "deregister", method_scheduler_deregister, 1);
@@ -91,6 +93,10 @@ VALUE method_scheduler_wait(VALUE self) {
     xfree(events);
     return result;
 }
+
+VALUE method_scheduler_backend() {
+    return rb_str_new_cstr("epoll");
+}
 #else
 // Fallback to IO.select
 VALUE method_scheduler_init(VALUE self) {
@@ -120,5 +126,9 @@ VALUE method_scheduler_wait(VALUE self) {
     next_timeout = rb_funcall(self, id_next_timeout, 0);
 
     return rb_funcall(rb_cIO, id_select, 4, readable_keys, writable_keys, rb_ary_new(), next_timeout);
+}
+
+VALUE method_scheduler_backend() {
+    return rb_str_new_cstr("ruby");
 }
 #endif
