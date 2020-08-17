@@ -1,7 +1,3 @@
-#pragma once
-#ifndef EVT_C
-#define EVT_C
-
 #include <ruby.h>
 
 VALUE Scheduler = Qnil;
@@ -14,7 +10,7 @@ VALUE method_scheduler_wait(VALUE self);
 
 void Init_evt_ext()
 {
-  Scheduler = rb_define_module("Scheduler");
+  Scheduler = rb_define_class("Scheduler", rb_cObject);
   rb_define_method(Scheduler, "init", method_scheduler_init, 0);
   rb_define_method(Scheduler, "register", method_scheduler_register, 2);
   rb_define_method(Scheduler, "deregister", method_scheduler_deregister, 1);
@@ -48,14 +44,13 @@ VALUE method_scheduler_wait(VALUE self) {
     ID id_keys = rb_intern("keys");
     ID id_next_timeout = rb_intern("next_timeout");
 
-    readable = rb_iv_get(self, rb_str_new2("@readble"));
-    writable = rb_iv_get(self, rb_str_new2("@writable"));
+    readable = rb_iv_get(self, "@readable");
+    writable = rb_iv_get(self, "@writable");
 
     readable_keys = rb_funcall(readable, id_keys, 0);
     writable_keys = rb_funcall(writable, id_keys, 0);
-    next_timeout = rb_funcall(writable, id_next_timeout, 0);
+    next_timeout = rb_funcall(self, id_next_timeout, 0);
 
     return rb_funcall(rb_cIO, id_select, 4, readable_keys, writable_keys, rb_ary_new(), next_timeout);
 }
-#endif
 // #endif
