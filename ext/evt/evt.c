@@ -1,14 +1,4 @@
-#include <ruby.h>
-
-VALUE Evt = Qnil;
-VALUE Scheduler = Qnil;
-
-void Init_evt_ext();
-VALUE method_scheduler_init(VALUE self);
-VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest);
-VALUE method_scheduler_deregister(VALUE self, VALUE io);
-VALUE method_scheduler_wait(VALUE self);
-VALUE method_scheduler_backend();
+#include "evt.h"
 
 void Init_evt_ext()
 {
@@ -73,7 +63,7 @@ VALUE method_scheduler_wait(VALUE self) {
     struct epoll_event* events = (struct epoll_event*) xmalloc(sizeof(struct epoll_event) * EPOLL_MAX_EVENTS);
     
     n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, next_timeout);
-    // Check if n > 0
+    // TODO: Check if n >= 0
 
     for (i = 0; i < n; i++) {
         event_flag = events[i].events;
@@ -96,6 +86,11 @@ VALUE method_scheduler_wait(VALUE self) {
 
 VALUE method_scheduler_backend() {
     return rb_str_new_cstr("epoll");
+}
+#elif defined(__FreeBSD__) || defined(__NetBSD__)
+
+VALUE method_scheduler_backend() {
+    return rb_str_new_cstr("kqueue");
 }
 #else
 // Fallback to IO.select
