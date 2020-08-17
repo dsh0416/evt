@@ -21,6 +21,7 @@ void Init_evt_ext()
 #if defined(__linux__) // Do more checks for epoll
 // Use epoll
 #include <sys/epoll.h>
+#define EPOLL_MAX_EVENTS 65535
 
 VALUE method_scheduler_init(VALUE self) {
     rb_iv_set(self, "@epfd", INT2NUM(epoll_create(1))); // Size of epoll is ignored after Linux 2.6.8.
@@ -28,6 +29,22 @@ VALUE method_scheduler_init(VALUE self) {
 }
 
 VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+    struct epoll_event event;
+    ID id_fileno = rb_intern("fileno");
+    int epfd = NUM2INT(rb_iv_get(self, "@epfd"));
+    int fd = NUM2INT(rb_funcall(io, id_fileno));
+    int ruby_interest = NUM2INT(interest);
+    int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_READABLE")));
+    int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_WRITABLE")));
+    
+    if (ruby_interest & readable) {
+        event.events |= EPOLLIN;
+    } else if (ruby_interest & writable) {
+        event.events |= EPOLLOUT;
+    }
+    event.epoll_data_t = (void*) io;
+
+    epoll_ctl(epfd, EPOLL_CTL_ADD, fd, event); // Require Linux 2.6.9 for NULL event.
     return Qnil;
 }
 
@@ -37,6 +54,41 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
     int fd = NUM2INT(rb_funcall(io, id_fileno));
     epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL); // Require Linux 2.6.9 for NULL event.
     return Qnil;
+}
+
+VALUE method_scheduler_wait(VALUE self) {
+    int n, epfd, i, event_flag;
+    VALUE next_timeout, obj_io, readables, writables, result;
+    ID id_next_timeout = rb_intern("next_timeout");
+    ID id_push = rb_intern("push");
+    
+    epfd = NUM2INT(rb_iv_get(self, "@epfd"));
+    next_timeout = rb_funcall(self, id_next_timeout, 0);
+    readables = rb_ary_new();
+    writables = rb_ary_new();
+
+    epoll_event* events = (epoll_event*) xmalloc(sizeof(epoll_event) * EPOLL_MAX_EVENTS);
+    
+    n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, next_timeout);
+    assert(n >= 0) // TODO: edit error handling here
+
+    for (i = 0; i < n; i++) {
+        event_flag = events[i].events;
+        if (event_flag & EPOLLIN) {
+            obj_io = (VALUE) events[i].epoll_data;
+            rb_funcall(readables, id_push, 1, obj_io);
+        } else if (event_flag & EPOLLOUT) {
+            obj_io = (VALUE) events[i].epoll_data;
+            rb_funcall(writables, id_push, 1, obj_io);
+        }
+    }
+
+    result = rb_ary_new2(2);
+    rb_ary_store(result, 0, readables);
+    rb_ary_store(result, 1, writables);
+
+    xfree(events);
+    return result;
 }
 #else
 // Fallback to IO.select
