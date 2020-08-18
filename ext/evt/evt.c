@@ -50,7 +50,7 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
 }
 
 VALUE method_scheduler_wait(VALUE self) {
-    int n, epfd, i, event_flag;
+    int n, epfd, i, event_flag, timeout;
     VALUE next_timeout, obj_io, readables, writables, result;
     ID id_next_timeout = rb_intern("next_timeout");
     ID id_push = rb_intern("push");
@@ -60,9 +60,15 @@ VALUE method_scheduler_wait(VALUE self) {
     readables = rb_ary_new();
     writables = rb_ary_new();
 
+    if (next_timeout == Qnil) {
+        timeout = -1;
+    } else {
+        timeout = NUM2INT(next_timeout);
+    }
+
     struct epoll_event* events = (struct epoll_event*) xmalloc(sizeof(struct epoll_event) * EPOLL_MAX_EVENTS);
     
-    n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, NUM2INT(next_timeout));
+    n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, timeout);
     // TODO: Check if n >= 0
 
     for (i = 0; i < n; i++) {
@@ -112,7 +118,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
         event_flags |= EVFILT_WRITE;
     }
 
-    EV_SET(&event, fd, event_flags, EV_ADD | EV_CLEAR, 0, 0, (void*) io);
+    EV_SET(&event, fd, event_flags, EV_ADD|EV_ENABLE, 0, 0, (void*) io);
     kevent(kq, &event, 1, NULL, 0, NULL); // TODO: Check the return value
     return Qnil;
 }
@@ -144,17 +150,17 @@ VALUE method_scheduler_wait(VALUE self) {
 
    events = (struct kevent*) xmalloc(sizeof(struct kevent) * KQUEUE_MAX_EVENTS);
 
-    if (NUM2INT(next_timeout) == -1) {
+    if (next_timeout == Qnil || NUM2INT(next_timeout) == -1) {
         n = kevent(kq, NULL, 0, events, KQUEUE_MAX_EVENTS, NULL);
     } else {
         timeout.tv_sec = next_timeout / 1000;
-        timeout.tv_nsec = next_timeout % 1000 * 1000;
+        timeout.tv_nsec = next_timeout % 1000 * 1000 * 1000;
         n = kevent(kq, NULL, 0, events, KQUEUE_MAX_EVENTS, &timeout);
     }
 
     // TODO: Check if n >= 0
     for (i = 0; i < n; i++) {
-        event_flags = events[i].flags;
+        event_flags = events[i].filter;
         if (event_flags & EVFILT_READ) {
             obj_io = (VALUE) events[i].udata;
             rb_funcall(readables, id_push, 1, obj_io);
