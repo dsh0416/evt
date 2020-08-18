@@ -1,16 +1,17 @@
 ---
 language: ruby
 cache: bundler
+rvm: 2.7.1
 matrix:
   include:
     - rvm: 2.7.1
+      os: linux
+    - rvm: 2.7.1
+      os: osx
     - rvm: ruby-head
   allow_failures:
     - rvm: ruby-head
   fast_finish: true
-os:
-  - linux
-  - osx
 
 before_install: gem install bundler -v 2.1.4
 script:
