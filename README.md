@@ -1,4 +1,7 @@
 # evt
+
+[![Build Status](https://travis-ci.org/dsh0416/evt.svg?branch=master)](https://travis-ci.org/dsh0416/evt)
+
 A Handcrafted Low-Level Event Handler designed as Ruby 3 Scheduler. 
 
 Supports `epoll`, `kqueue`, IOCP (WIP), and Ruby `select` fallback.
