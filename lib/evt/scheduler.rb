@@ -91,7 +91,7 @@ class Evt::Scheduler
 
   def wait_writable(io)
     @writable[io] = Fiber.current
-    self.register(io, IO::WAIT_READABLE)
+    self.register(io, IO::WAIT_WRITABLE)
     Fiber.yield
     @writable.delete(io)
     self.deregister(io)
