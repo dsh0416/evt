@@ -1,6 +1,24 @@
 ---
 language: ruby
 cache: bundler
-rvm:
-  - ruby-head
+matrix:
+  include:
+    - rvm: 2.7.1
+    - rvm: ruby-head
+  allow_failures:
+    - rvm: ruby-head
+  fast_finish: true
+os:
+  - linux
+  - osx
+
 before_install: gem install bundler -v 2.1.4
+script:
+  - gem list -l
+  - bundle exec rake compile
+  - bundle exec rake
+
+bundler_args: --jobs 1 --retry 3
+
+notifications:
+  email: false
