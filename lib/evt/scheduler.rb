@@ -41,7 +41,6 @@ class Evt::Scheduler
 
   def run
     while @readable.any? or @writable.any? or @waiting.any?
-      # Can only handle file descriptors up to 1024...
       readable, writable = self.wait
 
       # puts "readable: #{readable}" if readable&.any?
