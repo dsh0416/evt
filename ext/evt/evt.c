@@ -11,11 +11,104 @@ void Init_evt_ext()
     rb_define_method(Scheduler, "wait", method_scheduler_wait, 0);
 }
 
+#if HAVE_LIBURING_H
+struct io_data {
+    short poll_mask;
+    VALUE io;
+}
 
-#if defined(__linux__) // TODO: Do more checks for using epoll
-#include <sys/epoll.h>
-#define EPOLL_MAX_EVENTS 64
+VALUE method_scheduler_init(VALUE self) {
+    struct io_uring* ring;
+    ring = (struct io_uring*) xmalloc(sizeof(struct io_uring));
+    io_uring_queue_init(URING_ENTRIES, ring, 0);
+    rb_iv_set(self, "@ring", Data_Wrap_Struct(rb_cObject, NULL, NULL, ring)); // TODO: setup the free function
+    return Qnil;
+}
 
+VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+    struct io_uring* ring;
+    struct io_uring_sqe *sqe;
+    struct io_data *data;
+    short poll_mask;
+
+    Data_Get_Struct(rb_iv_get(self, "@ring"), io_uring, ring);
+    sqe = io_uring_get_sqe(&ring);
+    int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
+
+    int ruby_interest = NUM2INT(interest);
+    int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_READABLE")));
+    int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_WRITABLE")));
+    
+    if (ruby_interest & readable) {
+        poll_mask |= POLLIN;
+    } else if (ruby_interest & writable) {
+        poll_mask |= POLLOUT;
+    }
+
+    data = (io_data*) xmalloc(sizeof(struct io_data));
+    data->io = io;
+    data->poll_mask = poll_mask;
+    
+    io_uring_sqe_set_data(sqe, data);
+    io_uring_prep_poll_add(sqe, fd, poll_mask);
+    return Qnil;
+}
+
+VALUE method_scheduler_deregister(VALUE self, VALUE io) {
+    // io_uring runs under onshot mode. No need to deregister.
+    return Qnil;
+}
+
+VALUE method_scheduler_wait(VALUE self) {
+    struct io_uring* ring;
+    struct io_uring_cqe *cqe;
+    struct io_data *data;
+    VALUE next_timeout, obj_io, readables, writables, result;
+    unsigned ret, i;
+    short poll_events;
+
+    ID id_next_timeout = rb_intern("next_timeout");
+    ID id_push = rb_intern("push");
+
+    next_timeout = rb_funcall(self, id_next_timeout, 0);
+    readables = rb_ary_new();
+    writables = rb_ary_new();
+
+    Data_Get_Struct(rb_iv_get(self, "@ring"), io_uring, ring);
+    ret = io_uring_peek_batch_cqe(ring, &cqes, 64);
+
+    for (i = 0; i < ret; i++) {
+        data = (struct io_data*) io_uring_cqe_get_data(cqes[i]);
+        poll_events = data->poll_events;
+        if (poll_events & POLLIN) {
+            obj_io = data->io;
+            rb_funcall(readables, id_push, 1, obj_io);
+        } else if (poll_events & POLLOUT) {
+            obj_io = data->io;
+            rb_funcall(writables, id_push, 1, obj_io);
+        }
+        xfree(data);
+    }
+
+    if (ret == 0) {
+       if (next_timeout != Qnil && NUM2INT(next_timeout) != -1) {
+            // sleep
+            double time = next_timeout / 1000;
+            rb_f_sleep(1, RFLOAT_VALUE(time), NULL);
+       }
+    }
+
+    result = rb_ary_new2(2);
+    rb_ary_store(result, 0, readables);
+    rb_ary_store(result, 1, writables);
+
+    return result;
+}
+
+VALUE method_scheduler_backend() {
+    return rb_str_new_cstr("liburing");
+}
+#elif HAVE_SYS_EPOLL_H // TODO: Do more checks for using epoll
 VALUE method_scheduler_init(VALUE self) {
     rb_iv_set(self, "@epfd", INT2NUM(epoll_create(1))); // Size of epoll is ignored after Linux 2.6.8.
     return Qnil;
@@ -93,10 +186,7 @@ VALUE method_scheduler_wait(VALUE self) {
 VALUE method_scheduler_backend() {
     return rb_str_new_cstr("epoll");
 }
-#elif defined(__FreeBSD__) || defined(__NetBSD__) || defined(__APPLE__)
-#include <sys/event.h>
-#define KQUEUE_MAX_EVENTS 64
-
+#elif HAVE_SYS_EVENT_H
 VALUE method_scheduler_init(VALUE self) {
     rb_iv_set(self, "@kq", INT2NUM(kqueue()));
     return Qnil;
