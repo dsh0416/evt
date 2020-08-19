@@ -13,10 +13,11 @@ VALUE method_scheduler_backend();
 #if HAVE_LIBURING_H
     #include <liburing.h>
     #define URING_ENTRIES 65535
+    #define URING_MAX_EVENTS 64
     struct uring_payload {
         short poll_mask;
         VALUE io;
-    }
+    };
 #elif HAVE_SYS_EPOLL_H
     #include <sys/epoll.h>
     #define EPOLL_MAX_EVENTS 64

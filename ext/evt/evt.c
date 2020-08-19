@@ -23,11 +23,12 @@ VALUE method_scheduler_init(VALUE self) {
 VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     struct io_uring* ring;
     struct io_uring_sqe *sqe;
-    struct uring_payload *data;
-    short poll_mask;
+    struct uring_payload *payload;
+    short poll_mask = 0;
+    ID id_fileno = rb_intern("fileno");
 
-    Data_Get_Struct(rb_iv_get(self, "@ring"), io_uring, ring);
-    sqe = io_uring_get_sqe(&ring);
+    Data_Get_Struct(rb_iv_get(self, "@ring"), struct io_uring, ring);
+    sqe = io_uring_get_sqe(ring);
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
 
     int ruby_interest = NUM2INT(interest);
@@ -35,12 +36,12 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_WRITABLE")));
     
     if (ruby_interest & readable) {
-        poll_mask |= POLLIN;
+        poll_mask |= POLL_IN;
     } else if (ruby_interest & writable) {
-        poll_mask |= POLLOUT;
+        poll_mask |= POLL_OUT;
     }
 
-    payload = (uring_payload*) xmalloc(sizeof(struct uring_payload));
+    payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
     payload->io = io;
     payload->poll_mask = poll_mask;
     
@@ -56,8 +57,8 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
 
 VALUE method_scheduler_wait(VALUE self) {
     struct io_uring* ring;
-    struct io_uring_cqe *cqe;
-    struct uring_payload *data;
+    struct io_uring_cqe **cqes;
+    struct uring_payload *payload;
     VALUE next_timeout, obj_io, readables, writables, result;
     unsigned ret, i;
     short poll_events;
@@ -69,21 +70,23 @@ VALUE method_scheduler_wait(VALUE self) {
     readables = rb_ary_new();
     writables = rb_ary_new();
 
-    Data_Get_Struct(rb_iv_get(self, "@ring"), io_uring, ring);
-    ret = io_uring_peek_batch_cqe(ring, &cqes, 64);
+    Data_Get_Struct(rb_iv_get(self, "@ring"), struct io_uring, ring);
+    cqes = xmalloc(sizeof(struct io_uring_cqe) * URING_MAX_EVENTS);
+    ret = io_uring_peek_batch_cqe(ring, cqes, URING_MAX_EVENTS);
 
     for (i = 0; i < ret; i++) {
         payload = (struct uring_payload*) io_uring_cqe_get_data(cqes[i]);
-        poll_events = payload->poll_events;
-        if (poll_events & POLLIN) {
+        poll_events = payload->poll_mask;
+        if (poll_events & POLL_IN) {
             obj_io = payload->io;
             rb_funcall(readables, id_push, 1, obj_io);
-        } else if (poll_events & POLLOUT) {
+        } else if (poll_events & POLL_OUT) {
             obj_io = payload->io;
             rb_funcall(writables, id_push, 1, obj_io);
         }
         xfree(payload);
     }
+    xfree(cqes);
 
     if (ret == 0) {
        if (next_timeout != Qnil && NUM2INT(next_timeout) != -1) {
