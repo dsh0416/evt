@@ -15,7 +15,7 @@ void Init_evt_ext()
 #if HAVE_LIBURING_H
 void uring_payload_free(void* data) {
     io_uring_queue_exit((struct io_uring*) data);
-    free(data);
+    xfree(data);
 }
 
 size_t uring_payload_size(const void* data) {
@@ -32,7 +32,7 @@ VALUE method_scheduler_init(VALUE self) {
         // TODO: check uring status
     }
     // printf("Address of ring is %p\n", (void *)ring);
-    rb_iv_set(self, "@ring", TypedData_Wrap_Struct(Payload, &type_uring_payload, ring)); // TODO: setup the free function
+    rb_iv_set(self, "@ring", TypedData_Wrap_Struct(Payload, &type_uring_payload, ring));
     return Qnil;
 }
 
@@ -60,7 +60,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     }
 
     payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
-    payload->io = io;
+    payload->io = (void*)io;
     payload->poll_mask = poll_mask;
     
     io_uring_prep_poll_add(sqe, fd, poll_mask);
@@ -84,6 +84,7 @@ VALUE method_scheduler_wait(VALUE self) {
 
     ID id_next_timeout = rb_intern("next_timeout");
     ID id_push = rb_intern("push");
+    ID id_sleep = rb_intern("sleep");
 
     next_timeout = rb_funcall(self, id_next_timeout, 0);
     readables = rb_ary_new();
@@ -97,10 +98,10 @@ VALUE method_scheduler_wait(VALUE self) {
         payload = (struct uring_payload*) io_uring_cqe_get_data(cqes[i]);
         poll_events = payload->poll_mask;
         if (poll_events & POLL_IN) {
-            obj_io = payload->io;
+            obj_io = (VALUE) payload->io;
             rb_funcall(readables, id_push, 1, obj_io);
         } else if (poll_events & POLL_OUT) {
-            obj_io = payload->io;
+            obj_io = (VALUE) payload->io;
             rb_funcall(writables, id_push, 1, obj_io);
         }
         xfree(payload);
@@ -111,7 +112,7 @@ VALUE method_scheduler_wait(VALUE self) {
        if (next_timeout != Qnil && NUM2INT(next_timeout) != -1) {
             // sleep
             double time = next_timeout / 1000;
-            rb_f_sleep(1, RFLOAT_VALUE(time), NULL);
+            rb_funcall(rb_mKernel, id_sleep, 1, RFLOAT_VALUE(time));
        }
     }
 

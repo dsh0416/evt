@@ -22,7 +22,7 @@ VALUE method_scheduler_backend();
 
     struct uring_payload {
         short poll_mask;
-        VALUE io;
+        void* io;
     };
     static const rb_data_type_t type_uring_payload = {
         .wrap_struct_name = "uring_payload",
