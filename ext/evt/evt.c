@@ -12,11 +12,6 @@ void Init_evt_ext()
 }
 
 #if HAVE_LIBURING_H
-struct io_data {
-    short poll_mask;
-    VALUE io;
-}
-
 VALUE method_scheduler_init(VALUE self) {
     struct io_uring* ring;
     ring = (struct io_uring*) xmalloc(sizeof(struct io_uring));
@@ -28,7 +23,7 @@ VALUE method_scheduler_init(VALUE self) {
 VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     struct io_uring* ring;
     struct io_uring_sqe *sqe;
-    struct io_data *data;
+    struct uring_payload *data;
     short poll_mask;
 
     Data_Get_Struct(rb_iv_get(self, "@ring"), io_uring, ring);
@@ -45,11 +40,11 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
         poll_mask |= POLLOUT;
     }
 
-    data = (io_data*) xmalloc(sizeof(struct io_data));
-    data->io = io;
-    data->poll_mask = poll_mask;
+    payload = (uring_payload*) xmalloc(sizeof(struct uring_payload));
+    payload->io = io;
+    payload->poll_mask = poll_mask;
     
-    io_uring_sqe_set_data(sqe, data);
+    io_uring_sqe_set_data(sqe, payload);
     io_uring_prep_poll_add(sqe, fd, poll_mask);
     return Qnil;
 }
@@ -62,7 +57,7 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
 VALUE method_scheduler_wait(VALUE self) {
     struct io_uring* ring;
     struct io_uring_cqe *cqe;
-    struct io_data *data;
+    struct uring_payload *data;
     VALUE next_timeout, obj_io, readables, writables, result;
     unsigned ret, i;
     short poll_events;
@@ -78,16 +73,16 @@ VALUE method_scheduler_wait(VALUE self) {
     ret = io_uring_peek_batch_cqe(ring, &cqes, 64);
 
     for (i = 0; i < ret; i++) {
-        data = (struct io_data*) io_uring_cqe_get_data(cqes[i]);
-        poll_events = data->poll_events;
+        payload = (struct uring_payload*) io_uring_cqe_get_data(cqes[i]);
+        poll_events = payload->poll_events;
         if (poll_events & POLLIN) {
-            obj_io = data->io;
+            obj_io = payload->io;
             rb_funcall(readables, id_push, 1, obj_io);
         } else if (poll_events & POLLOUT) {
-            obj_io = data->io;
+            obj_io = payload->io;
             rb_funcall(writables, id_push, 1, obj_io);
         }
-        xfree(data);
+        xfree(payload);
     }
 
     if (ret == 0) {

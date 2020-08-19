@@ -6,6 +6,12 @@ matrix:
   include:
     - rvm: 2.7.1
       os: linux
+      dist: xenial
+    - rvm: 2.7.1
+      os: linux
+      dist: focal
+      packages:
+        - liburing-dev
     - rvm: 2.7.1
       os: osx
     - rvm: ruby-head
