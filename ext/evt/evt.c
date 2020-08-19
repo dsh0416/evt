@@ -4,6 +4,7 @@ void Init_evt_ext()
 {
     Evt = rb_define_module("Evt");
     Scheduler = rb_define_class_under(Evt, "Scheduler", rb_cObject);
+    Payload = rb_define_class_under(Scheduler, "Payload", rb_cObject);
     rb_define_singleton_method(Scheduler, "backend", method_scheduler_backend, 0);
     rb_define_method(Scheduler, "init_selector", method_scheduler_init, 0);
     rb_define_method(Scheduler, "register", method_scheduler_register, 2);
@@ -12,22 +13,39 @@ void Init_evt_ext()
 }
 
 #if HAVE_LIBURING_H
+void uring_payload_free(void* data) {
+    io_uring_queue_exit((struct io_uring*) data);
+    free(data);
+}
+
+size_t uring_payload_size(const void* data) {
+    return sizeof(struct io_uring);
+}
+
 VALUE method_scheduler_init(VALUE self) {
+    int ret;
     struct io_uring* ring;
-    ring = (struct io_uring*) xmalloc(sizeof(struct io_uring));
-    io_uring_queue_init(URING_ENTRIES, ring, 0);
-    rb_iv_set(self, "@ring", Data_Wrap_Struct(rb_cObject, NULL, NULL, ring)); // TODO: setup the free function
+    ring = xmalloc(sizeof(struct io_uring));
+    // printf("Address of ring is %p\n", (void *)ring);
+    ret = io_uring_queue_init(URING_ENTRIES, ring, 0);
+    if (ret < 0) {
+        // TODO: check uring status
+    }
+    // printf("Address of ring is %p\n", (void *)ring);
+    rb_iv_set(self, "@ring", TypedData_Wrap_Struct(Payload, &type_uring_payload, ring)); // TODO: setup the free function
     return Qnil;
 }
 
 VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+    VALUE ring_obj;
     struct io_uring* ring;
     struct io_uring_sqe *sqe;
     struct uring_payload *payload;
     short poll_mask = 0;
     ID id_fileno = rb_intern("fileno");
 
-    Data_Get_Struct(rb_iv_get(self, "@ring"), struct io_uring, ring);
+    ring_obj = rb_iv_get(self, "@ring");
+    TypedData_Get_Struct(ring_obj, struct io_uring, &type_uring_payload, ring);
     sqe = io_uring_get_sqe(ring);
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
 
@@ -45,8 +63,9 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     payload->io = io;
     payload->poll_mask = poll_mask;
     
-    io_uring_sqe_set_data(sqe, payload);
     io_uring_prep_poll_add(sqe, fd, poll_mask);
+    io_uring_sqe_set_data(sqe, payload);
+    io_uring_submit(ring);
     return Qnil;
 }
 
@@ -70,7 +89,7 @@ VALUE method_scheduler_wait(VALUE self) {
     readables = rb_ary_new();
     writables = rb_ary_new();
 
-    Data_Get_Struct(rb_iv_get(self, "@ring"), struct io_uring, ring);
+    TypedData_Get_Struct(rb_iv_get(self, "@ring"), struct io_uring, &type_uring_payload, ring);
     cqes = xmalloc(sizeof(struct io_uring_cqe) * URING_MAX_EVENTS);
     ret = io_uring_peek_batch_cqe(ring, cqes, URING_MAX_EVENTS);
 
