@@ -4,7 +4,7 @@
 
 A Handcrafted Low-Level Event Handler designed as Ruby 3 Scheduler. 
 
-Supports `epoll`, `kqueue`, IOCP (WIP), and Ruby `select` fallback.
+Supports `io_uring`, `epoll`, `kqueue`, IOCP (WIP), and Ruby `select` fallback.
 
 ## Install
 

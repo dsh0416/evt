@@ -4,6 +4,7 @@ void Init_evt_ext()
 {
     Evt = rb_define_module("Evt");
     Scheduler = rb_define_class_under(Evt, "Scheduler", rb_cObject);
+    Payload = rb_define_class_under(Scheduler, "Payload", rb_cObject);
     rb_define_singleton_method(Scheduler, "backend", method_scheduler_backend, 0);
     rb_define_method(Scheduler, "init_selector", method_scheduler_init, 0);
     rb_define_method(Scheduler, "register", method_scheduler_register, 2);
@@ -12,22 +13,40 @@ void Init_evt_ext()
 }
 
 #if HAVE_LIBURING_H
+void uring_payload_free(void* data) {
+    io_uring_queue_exit((struct io_uring*) data);
+    xfree(data);
+}
+
+size_t uring_payload_size(const void* data) {
+    return sizeof(struct io_uring);
+}
+
 VALUE method_scheduler_init(VALUE self) {
+    int ret;
     struct io_uring* ring;
-    ring = (struct io_uring*) xmalloc(sizeof(struct io_uring));
-    io_uring_queue_init(URING_ENTRIES, ring, 0);
-    rb_iv_set(self, "@ring", Data_Wrap_Struct(rb_cObject, NULL, NULL, ring)); // TODO: setup the free function
+    ring = xmalloc(sizeof(struct io_uring));
+    // printf("Address of ring is %p\n", (void *)ring);
+    ret = io_uring_queue_init(URING_ENTRIES, ring, 0);
+    if (ret < 0) {
+        // TODO: check uring status
+    }
+    // printf("Address of ring is %p\n", (void *)ring);
+    rb_iv_set(self, "@ring", TypedData_Wrap_Struct(Payload, &type_uring_payload, ring));
     return Qnil;
 }
 
 VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+    VALUE ring_obj;
     struct io_uring* ring;
     struct io_uring_sqe *sqe;
-    struct uring_payload *data;
-    short poll_mask;
+    struct uring_payload *payload;
+    short poll_mask = 0;
+    ID id_fileno = rb_intern("fileno");
 
-    Data_Get_Struct(rb_iv_get(self, "@ring"), io_uring, ring);
-    sqe = io_uring_get_sqe(&ring);
+    ring_obj = rb_iv_get(self, "@ring");
+    TypedData_Get_Struct(ring_obj, struct io_uring, &type_uring_payload, ring);
+    sqe = io_uring_get_sqe(ring);
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
 
     int ruby_interest = NUM2INT(interest);
@@ -35,17 +54,18 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_WRITABLE")));
     
     if (ruby_interest & readable) {
-        poll_mask |= POLLIN;
+        poll_mask |= POLL_IN;
     } else if (ruby_interest & writable) {
-        poll_mask |= POLLOUT;
+        poll_mask |= POLL_OUT;
     }
 
-    payload = (uring_payload*) xmalloc(sizeof(struct uring_payload));
-    payload->io = io;
+    payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
+    payload->io = (void*)io;
     payload->poll_mask = poll_mask;
     
-    io_uring_sqe_set_data(sqe, payload);
     io_uring_prep_poll_add(sqe, fd, poll_mask);
+    io_uring_sqe_set_data(sqe, payload);
+    io_uring_submit(ring);
     return Qnil;
 }
 
@@ -56,40 +76,41 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
 
 VALUE method_scheduler_wait(VALUE self) {
     struct io_uring* ring;
-    struct io_uring_cqe *cqe;
-    struct uring_payload *data;
+    struct io_uring_cqe *cqes[URING_MAX_EVENTS];
+    struct uring_payload *payload;
     VALUE next_timeout, obj_io, readables, writables, result;
     unsigned ret, i;
+    double time = 0.0;
     short poll_events;
 
     ID id_next_timeout = rb_intern("next_timeout");
     ID id_push = rb_intern("push");
+    ID id_sleep = rb_intern("sleep");
 
     next_timeout = rb_funcall(self, id_next_timeout, 0);
     readables = rb_ary_new();
     writables = rb_ary_new();
 
-    Data_Get_Struct(rb_iv_get(self, "@ring"), io_uring, ring);
-    ret = io_uring_peek_batch_cqe(ring, &cqes, 64);
+    TypedData_Get_Struct(rb_iv_get(self, "@ring"), struct io_uring, &type_uring_payload, ring);
+    ret = io_uring_peek_batch_cqe(ring, cqes, URING_MAX_EVENTS);
 
     for (i = 0; i < ret; i++) {
         payload = (struct uring_payload*) io_uring_cqe_get_data(cqes[i]);
-        poll_events = payload->poll_events;
-        if (poll_events & POLLIN) {
-            obj_io = payload->io;
+        poll_events = payload->poll_mask;
+        if (poll_events & POLL_IN) {
+            obj_io = (VALUE) payload->io;
             rb_funcall(readables, id_push, 1, obj_io);
-        } else if (poll_events & POLLOUT) {
-            obj_io = payload->io;
+        } else if (poll_events & POLL_OUT) {
+            obj_io = (VALUE) payload->io;
             rb_funcall(writables, id_push, 1, obj_io);
         }
-        xfree(payload);
     }
 
     if (ret == 0) {
        if (next_timeout != Qnil && NUM2INT(next_timeout) != -1) {
             // sleep
-            double time = next_timeout / 1000;
-            rb_f_sleep(1, RFLOAT_VALUE(time), NULL);
+            time = next_timeout / 1000;
+            rb_funcall(rb_mKernel, id_sleep, 1, RFLOAT_VALUE(time));
        }
     }
 
