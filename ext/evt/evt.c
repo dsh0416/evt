@@ -104,7 +104,6 @@ VALUE method_scheduler_wait(VALUE self) {
             obj_io = (VALUE) payload->io;
             rb_funcall(writables, id_push, 1, obj_io);
         }
-        xfree(payload);
     }
 
     if (ret == 0) {
