@@ -76,10 +76,11 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
 
 VALUE method_scheduler_wait(VALUE self) {
     struct io_uring* ring;
-    struct io_uring_cqe **cqes;
+    struct io_uring_cqe *cqes[URING_MAX_EVENTS];
     struct uring_payload *payload;
     VALUE next_timeout, obj_io, readables, writables, result;
     unsigned ret, i;
+    double time = 0.0;
     short poll_events;
 
     ID id_next_timeout = rb_intern("next_timeout");
@@ -91,7 +92,6 @@ VALUE method_scheduler_wait(VALUE self) {
     writables = rb_ary_new();
 
     TypedData_Get_Struct(rb_iv_get(self, "@ring"), struct io_uring, &type_uring_payload, ring);
-    cqes = xmalloc(sizeof(struct io_uring_cqe) * URING_MAX_EVENTS);
     ret = io_uring_peek_batch_cqe(ring, cqes, URING_MAX_EVENTS);
 
     for (i = 0; i < ret; i++) {
@@ -106,12 +106,11 @@ VALUE method_scheduler_wait(VALUE self) {
         }
         xfree(payload);
     }
-    xfree(cqes);
 
     if (ret == 0) {
        if (next_timeout != Qnil && NUM2INT(next_timeout) != -1) {
             // sleep
-            double time = next_timeout / 1000;
+            time = next_timeout / 1000;
             rb_funcall(rb_mKernel, id_sleep, 1, RFLOAT_VALUE(time));
        }
     }
