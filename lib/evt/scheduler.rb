@@ -157,7 +157,7 @@ class Evt::Scheduler
   end
 
   def io_write(io, buffer, offset, length)
-    pending = buffer.byteslice(0, length)
+    pending = buffer.byteslice(0...length)
     io.seek(offset) unless offset == 0
     written = 0
     while written < pending.bytesize
