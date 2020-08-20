@@ -26,12 +26,10 @@ VALUE method_scheduler_init(VALUE self) {
     int ret;
     struct io_uring* ring;
     ring = xmalloc(sizeof(struct io_uring));
-    // printf("Address of ring is %p\n", (void *)ring);
     ret = io_uring_queue_init(URING_ENTRIES, ring, 0);
     if (ret < 0) {
-        // TODO: check uring status
+        rb_raise(rb_eIOError, "unable to initalize io_uring");
     }
-    // printf("Address of ring is %p\n", (void *)ring);
     rb_iv_set(self, "@ring", TypedData_Wrap_Struct(Payload, &type_uring_payload, ring));
     return Qnil;
 }
@@ -70,7 +68,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
 }
 
 VALUE method_scheduler_deregister(VALUE self, VALUE io) {
-    // io_uring runs under onshot mode. No need to deregister.
+    // io_uring runs under oneshot mode. No need to deregister.
     return Qnil;
 }
 
@@ -111,6 +109,8 @@ VALUE method_scheduler_wait(VALUE self) {
             // sleep
             time = next_timeout / 1000;
             rb_funcall(rb_mKernel, id_sleep, 1, RFLOAT_VALUE(time));
+       } else {
+            rb_funcall(rb_mKernel, id_sleep, 1, RFLOAT_VALUE(0.001)); // To avoid infinite loop
        }
     }
 
@@ -178,7 +178,9 @@ VALUE method_scheduler_wait(VALUE self) {
     struct epoll_event* events = (struct epoll_event*) xmalloc(sizeof(struct epoll_event) * EPOLL_MAX_EVENTS);
     
     n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, timeout);
-    // TODO: Check if n >= 0
+    if (n < 0) {
+        rb_raise(rb_eIOError, "unable to call epoll_wait");
+    }
 
     for (i = 0; i < n; i++) {
         event_flag = events[i].events;
