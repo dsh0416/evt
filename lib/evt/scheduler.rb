@@ -145,6 +145,27 @@ class Evt::Scheduler
     )
   end
 
+  def io_read(io, buffer, offset, length)
+    result = ''
+    while result.bytesize < offset
+      wait_readable(io)
+      result << io.read_nonblock(length - result.bytesize)
+    end
+    sliced = result.byteslice(offset..-1)
+    buffer << sliced unless buffer.nil?
+    sliced
+  end
+
+  def io_write(io, buffer, offset, length)
+    pending = buffer.byteslice(0, length)
+    io.seek(offset) unless offset == 0
+    written = 0
+    while written < pending.bytesize
+      wait_writable(io)
+      written += pending.byteslice(written..-1)
+    end
+  end
+
   def enter_blocking_region
     # puts "Enter blocking region: #{caller.first}"
   end
