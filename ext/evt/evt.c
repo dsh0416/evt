@@ -146,10 +146,10 @@ VALUE method_scheduler_io_read(VALUE io, VALUE buffer, VALUE offset, VALUE lengt
     struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
 
-    read_buffer = (char*) xmalloc(NUM2SIZET(length));
+    read_buffer = (char*) xmalloc(NUM2SIZE(length));
     struct iovec iov = {
         .iov_base = read_buffer,
-        .iov_len = NUM2SIZET(length),
+        .iov_len = NUM2SIZE(length),
     };
 
     payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
@@ -157,7 +157,7 @@ VALUE method_scheduler_io_read(VALUE io, VALUE buffer, VALUE offset, VALUE lengt
     payload->io = (void*)io;
     payload->poll_mask = 0;
     
-    io_uring_prep_readv(sqe, fd, &iovec, 1, NUM2SIZET(offset);
+    io_uring_prep_readv(sqe, fd, &iovec, 1, NUM2SIZE(offset);
     io_uring_sqe_set_data(sqe, payload);
     io_uring_submit(ring);
     // Fiber.yield
@@ -189,7 +189,7 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
     write_buffer = StringValueCStr(buffer);
     struct iovec iov = {
         .iov_base = buffer,
-        .iov_len = NUM2SIZET(length),
+        .iov_len = NUM2SIZE(length),
     };
 
     payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
@@ -197,7 +197,7 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
     payload->io = (void*)io;
     payload->poll_mask = 0;
     
-    io_uring_prep_writev(sqe, fd, &iovec, 1, NUM2SIZET(offset);
+    io_uring_prep_writev(sqe, fd, &iovec, 1, NUM2SIZE(offset);
     io_uring_sqe_set_data(sqe, payload);
     io_uring_submit(ring);
     // Fiber.yield
