@@ -166,6 +166,7 @@ VALUE method_scheduler_io_read(VALUE io, VALUE buffer, VALUE offset, VALUE lengt
     rb_hash_delete_m(iovs, io);
 
     VALUE result = rb_str_new(read_buffer, strlen(read_buffer));
+    xfree(read_buffer);
     if (buffer != Qnil) {
         rb_str_append(buffer, result);
     }
