@@ -280,10 +280,9 @@ VALUE method_scheduler_wait(VALUE self) {
         }
     }
 
-    result = rb_ary_new2(3);
+    result = rb_ary_new2(2);
     rb_ary_store(result, 0, readables);
     rb_ary_store(result, 1, writables);
-    rb_ary_store(result, 2, Qnil);
 
     xfree(events);
     return result;
@@ -369,7 +368,6 @@ VALUE method_scheduler_wait(VALUE self) {
     result = rb_ary_new2(2);
     rb_ary_store(result, 0, readables);
     rb_ary_store(result, 1, writables);
-    rb_ary_store(result, 2, Qnil);
 
     xfree(events);
     return result;
@@ -394,7 +392,7 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
 
 VALUE method_scheduler_wait(VALUE self) {
     // return IO.select(@readable.keys, @writable.keys, [], next_timeout)
-    VALUE readable, writable, readable_keys, writable_keys, next_timeout, result;
+    VALUE readable, writable, readable_keys, writable_keys, next_timeout;
     ID id_select = rb_intern("select");
     ID id_next_timeout = rb_intern("next_timeout");
 
@@ -405,9 +403,7 @@ VALUE method_scheduler_wait(VALUE self) {
     writable_keys = rb_funcall(writable, rb_intern("keys"), 0);
     next_timeout = rb_funcall(self, id_next_timeout, 0);
 
-    result = rb_funcall(rb_cIO, id_select, 4, readable_keys, writable_keys, rb_ary_new(), next_timeout);
-    rb_ary_push(result, Qnil);
-    return result;
+    return rb_funcall(rb_cIO, id_select, 4, readable_keys, writable_keys, rb_ary_new(), next_timeout);
 }
 
 VALUE method_scheduler_backend() {
