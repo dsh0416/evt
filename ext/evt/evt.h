@@ -3,6 +3,7 @@
 VALUE Evt = Qnil;
 VALUE Scheduler = Qnil;
 VALUE Payload = Qnil;
+VALUE Fiber = Qnil;
 
 void Init_evt_ext();
 VALUE method_scheduler_init(VALUE self);

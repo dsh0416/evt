@@ -5,6 +5,7 @@ void Init_evt_ext()
     Evt = rb_define_module("Evt");
     Scheduler = rb_define_class_under(Evt, "Scheduler", rb_cObject);
     Payload = rb_define_class_under(Scheduler, "Payload", rb_cObject);
+    Fiber = rb_define_class("Fiber", rb_cObject);
     rb_define_singleton_method(Scheduler, "backend", method_scheduler_backend, 0);
     rb_define_method(Scheduler, "init_selector", method_scheduler_init, 0);
     rb_define_method(Scheduler, "register", method_scheduler_register, 2);
@@ -132,24 +133,24 @@ VALUE method_scheduler_wait(VALUE self) {
     return result;
 }
 
-VALUE method_scheduler_io_read(VALUE io, VALUE buffer, VALUE offset, VALUE length) {
+VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
     struct io_uring* ring;
     struct uring_payload *payload;
-    struct char* read_buffer;
+    char* read_buffer;
     ID id_fileno = rb_intern("fileno");
     // @iov[io] = Fiber.current
     VALUE iovs = rb_iv_get(self, "@iovs");
-    rb_hash_aset(iovs, io, rb_funcall(rb_cFiber, rb_intern("current")));
+    rb_hash_aset(iovs, io, rb_funcall(Fiber, rb_intern("current"), 0));
     // register
     VALUE ring_obj = rb_iv_get(self, "@ring");
     TypedData_Get_Struct(ring_obj, struct io_uring, &type_uring_payload, ring);
     struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
 
-    read_buffer = (char*) xmalloc(NUM2SIZE(length));
+    read_buffer = (char*) xmalloc(NUM2SIZET(length));
     struct iovec iov = {
         .iov_base = read_buffer,
-        .iov_len = NUM2SIZE(length),
+        .iov_len = NUM2SIZET(length),
     };
 
     payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
@@ -157,13 +158,13 @@ VALUE method_scheduler_io_read(VALUE io, VALUE buffer, VALUE offset, VALUE lengt
     payload->io = (void*)io;
     payload->poll_mask = 0;
     
-    io_uring_prep_readv(sqe, fd, &iovec, 1, NUM2SIZE(offset);
+    io_uring_prep_readv(sqe, fd, &iov, 1, NUM2SIZET(offset));
     io_uring_sqe_set_data(sqe, payload);
     io_uring_submit(ring);
     // Fiber.yield
-    rb_funcall(rb_cFiber, rb_intern("yield"));
+    rb_funcall(Fiber, rb_intern("yield"), 0);
     // @iovs.delete(io)
-    rb_hash_delete_m(iovs, io);
+    rb_hash_delete(iovs, io);
 
     VALUE result = rb_str_new(read_buffer, strlen(read_buffer));
     if (buffer != Qnil) {
@@ -172,14 +173,14 @@ VALUE method_scheduler_io_read(VALUE io, VALUE buffer, VALUE offset, VALUE lengt
     return result;
 }
 
-VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE length) {
+VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
     struct io_uring* ring;
     struct uring_payload *payload;
-    struct char* write_buffer;
+    char* write_buffer;
     ID id_fileno = rb_intern("fileno");
     // @iov[io] = Fiber.current
     VALUE iovs = rb_iv_get(self, "@iovs");
-    rb_hash_aset(iovs, io, rb_funcall(rb_cFiber, rb_intern("current")));
+    rb_hash_aset(iovs, io, rb_funcall(Fiber, rb_intern("current"), 0));
     // register
     VALUE ring_obj = rb_iv_get(self, "@ring");
     TypedData_Get_Struct(ring_obj, struct io_uring, &type_uring_payload, ring);
@@ -188,8 +189,8 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
 
     write_buffer = StringValueCStr(buffer);
     struct iovec iov = {
-        .iov_base = buffer,
-        .iov_len = NUM2SIZE(length),
+        .iov_base = write_buffer,
+        .iov_len = NUM2SIZET(length),
     };
 
     payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
@@ -197,13 +198,13 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
     payload->io = (void*)io;
     payload->poll_mask = 0;
     
-    io_uring_prep_writev(sqe, fd, &iovec, 1, NUM2SIZE(offset);
+    io_uring_prep_writev(sqe, fd, &iov, 1, NUM2SIZET(offset));
     io_uring_sqe_set_data(sqe, payload);
     io_uring_submit(ring);
     // Fiber.yield
-    rb_funcall(rb_cFiber, rb_intern("yield"));
+    rb_funcall(Fiber, rb_intern("yield"), 0);
     // @iovs.delete(io)
-    rb_hash_delete_m(iovs, io);
+    rb_hash_delete(iovs, io);
     return length;
 }
 
