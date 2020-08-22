@@ -56,10 +56,12 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     int ruby_interest = NUM2INT(interest);
     int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
-    
+
     if (ruby_interest & readable) {
         poll_mask |= POLL_IN;
-    } else if (ruby_interest & writable) {
+    }
+
+    if (ruby_interest & writable) {
         poll_mask |= POLL_OUT;
     }
 
@@ -230,9 +232,12 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     
     if (ruby_interest & readable) {
         event.events |= EPOLLIN;
-    } else if (ruby_interest & writable) {
+    }
+
+    if (ruby_interest & writable) {
         event.events |= EPOLLOUT;
     }
+
     event.data.ptr = (void*) io;
 
     epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
@@ -311,7 +316,9 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     
     if (ruby_interest & readable) {
         event_flags |= EVFILT_READ;
-    } else if (ruby_interest & writable) {
+    }
+
+    if (ruby_interest & writable) {
         event_flags |= EVFILT_WRITE;
     }
 

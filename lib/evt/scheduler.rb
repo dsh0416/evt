@@ -153,16 +153,19 @@ class Evt::Scheduler
   end
 
   def io_read(io, buffer, offset, length)
-    io.seek(offset)
+    # io.seek(offset)
+    result = ''
     wait_readable(io)
-    result = io.read_nonblock(length)
-    buffer << result unless buffer.nil?
-    result
+    while result.length < offset
+      result << io.read_nonblock(length + offset)
+    end
+    sliced = result.byteslice(offset..-1)
+    buffer << sliced unless buffer.nil?
+    sliced
   end
 
   def io_write(io, buffer, offset, length)
-    pending = buffer.byteslice(0...length)
-    io.seek(offset) unless offset == 0
+    pending = buffer.byteslice(offset...offset+length)
     written = 0
     while written < pending.bytesize
       wait_writable(io)
