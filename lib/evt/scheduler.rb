@@ -153,8 +153,7 @@ class Evt::Scheduler
   end
 
   def io_read(io, buffer, offset, length)
-    # io.seek(offset)
-    result = ''
+    result = ''.dup
     wait_readable(io)
     while result.length < offset
       result << io.read_nonblock(length + offset)
