@@ -13,6 +13,7 @@ class Evt::Scheduler
   def initialize
     @readable = {}
     @writable = {}
+    @iovs = {}
     @waiting = {}
     @blocking = []
 
@@ -40,8 +41,8 @@ class Evt::Scheduler
   end
 
   def run
-    while @readable.any? or @writable.any? or @waiting.any?
-      readable, writable = self.wait
+    while @readable.any? or @writable.any? or @waiting.any? or @iovs.any?
+      readable, writable, iovs = self.wait
 
       # puts "readable: #{readable}" if readable&.any?
       # puts "writable: #{writable}" if writable&.any?
@@ -52,6 +53,12 @@ class Evt::Scheduler
 
       writable&.each do |io|
         @writable[io]&.resume
+      end
+
+      unless iovs.nil?
+        iovs&.each do |io|
+          @iovs[io]&.resume
+        end
       end
 
       if @waiting.any?
@@ -76,7 +83,7 @@ class Evt::Scheduler
 
   def wait_readable(io)
     @readable[io] = Fiber.current
-    self.register(io, IO::WAIT_READABLE)
+    self.register(io, IO::READABLE)
     Fiber.yield
     @readable.delete(io)
     self.deregister(io)
@@ -91,7 +98,7 @@ class Evt::Scheduler
 
   def wait_writable(io)
     @writable[io] = Fiber.current
-    self.register(io, IO::WAIT_WRITABLE)
+    self.register(io, IO::WRITABLE)
     Fiber.yield
     @writable.delete(io)
     self.deregister(io)
@@ -117,11 +124,11 @@ class Evt::Scheduler
   end
 
   def wait_any(io, events, duration)
-    unless (events & IO::WAIT_READABLE).zero?
+    unless (events & IO::READABLE).zero?
       @readable[io] = Fiber.current
     end
 
-    unless (events & IO::WAIT_WRITABLE).zero?
+    unless (events & IO::WRITABLE).zero?
       @writable[io] = Fiber.current
     end
 
@@ -143,6 +150,26 @@ class Evt::Scheduler
       events,
       duration
     )
+  end
+
+  def io_read(io, buffer, offset, length)
+    result = ''.dup
+    wait_readable(io)
+    while result.length < offset
+      result << io.read_nonblock(length + offset)
+    end
+    sliced = result.byteslice(offset..-1)
+    buffer << sliced unless buffer.nil?
+    sliced
+  end
+
+  def io_write(io, buffer, offset, length)
+    pending = buffer.byteslice(offset...offset+length)
+    written = 0
+    while written < pending.bytesize
+      wait_writable(io)
+      written += pending.byteslice(written..-1)
+    end
   end
 
   def enter_blocking_region

@@ -5,11 +5,17 @@ void Init_evt_ext()
     Evt = rb_define_module("Evt");
     Scheduler = rb_define_class_under(Evt, "Scheduler", rb_cObject);
     Payload = rb_define_class_under(Scheduler, "Payload", rb_cObject);
+    Fiber = rb_define_class("Fiber", rb_cObject);
     rb_define_singleton_method(Scheduler, "backend", method_scheduler_backend, 0);
     rb_define_method(Scheduler, "init_selector", method_scheduler_init, 0);
     rb_define_method(Scheduler, "register", method_scheduler_register, 2);
     rb_define_method(Scheduler, "deregister", method_scheduler_deregister, 1);
     rb_define_method(Scheduler, "wait", method_scheduler_wait, 0);
+
+#if HAVELIBURING_H
+    rb_define_method(Scheduler, "io_read", method_scheduler_io_read, 4);
+    rb_define_method(Scheduler, "io_write", method_scheduler_io_read, 4);
+#endif
 }
 
 #if HAVE_LIBURING_H
@@ -26,12 +32,10 @@ VALUE method_scheduler_init(VALUE self) {
     int ret;
     struct io_uring* ring;
     ring = xmalloc(sizeof(struct io_uring));
-    // printf("Address of ring is %p\n", (void *)ring);
     ret = io_uring_queue_init(URING_ENTRIES, ring, 0);
     if (ret < 0) {
-        // TODO: check uring status
+        rb_raise(rb_eIOError, "unable to initalize io_uring");
     }
-    // printf("Address of ring is %p\n", (void *)ring);
     rb_iv_set(self, "@ring", TypedData_Wrap_Struct(Payload, &type_uring_payload, ring));
     return Qnil;
 }
@@ -50,16 +54,19 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
 
     int ruby_interest = NUM2INT(interest);
-    int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_READABLE")));
-    int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_WRITABLE")));
-    
+    int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
+    int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
+
     if (ruby_interest & readable) {
         poll_mask |= POLL_IN;
-    } else if (ruby_interest & writable) {
+    }
+
+    if (ruby_interest & writable) {
         poll_mask |= POLL_OUT;
     }
 
     payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
+    payload->is_poll = true;
     payload->io = (void*)io;
     payload->poll_mask = poll_mask;
     
@@ -70,7 +77,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
 }
 
 VALUE method_scheduler_deregister(VALUE self, VALUE io) {
-    // io_uring runs under onshot mode. No need to deregister.
+    // io_uring runs under oneshot mode. No need to deregister.
     return Qnil;
 }
 
@@ -78,7 +85,7 @@ VALUE method_scheduler_wait(VALUE self) {
     struct io_uring* ring;
     struct io_uring_cqe *cqes[URING_MAX_EVENTS];
     struct uring_payload *payload;
-    VALUE next_timeout, obj_io, readables, writables, result;
+    VALUE next_timeout, obj_io, readables, writables, iovs, result;
     unsigned ret, i;
     double time = 0.0;
     short poll_events;
@@ -90,6 +97,7 @@ VALUE method_scheduler_wait(VALUE self) {
     next_timeout = rb_funcall(self, id_next_timeout, 0);
     readables = rb_ary_new();
     writables = rb_ary_new();
+    iovs = rb_ary_new();
 
     TypedData_Get_Struct(rb_iv_get(self, "@ring"), struct io_uring, &type_uring_payload, ring);
     ret = io_uring_peek_batch_cqe(ring, cqes, URING_MAX_EVENTS);
@@ -97,7 +105,10 @@ VALUE method_scheduler_wait(VALUE self) {
     for (i = 0; i < ret; i++) {
         payload = (struct uring_payload*) io_uring_cqe_get_data(cqes[i]);
         poll_events = payload->poll_mask;
-        if (poll_events & POLL_IN) {
+        if (!payload->is_poll) {
+            obj_io = (VALUE) payload->io;
+            rb_funcall(iovs, id_push, 1, obj_io);
+        } else if (poll_events & POLL_IN) {
             obj_io = (VALUE) payload->io;
             rb_funcall(readables, id_push, 1, obj_io);
         } else if (poll_events & POLL_OUT) {
@@ -111,19 +122,99 @@ VALUE method_scheduler_wait(VALUE self) {
             // sleep
             time = next_timeout / 1000;
             rb_funcall(rb_mKernel, id_sleep, 1, RFLOAT_VALUE(time));
+       } else {
+            rb_funcall(rb_mKernel, id_sleep, 1, RFLOAT_VALUE(0.001)); // To avoid infinite loop
        }
     }
 
-    result = rb_ary_new2(2);
+    result = rb_ary_new2(3);
     rb_ary_store(result, 0, readables);
     rb_ary_store(result, 1, writables);
+    rb_ary_store(result, 2, iovs);
 
     return result;
+}
+
+VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
+    struct io_uring* ring;
+    struct uring_payload *payload;
+    char* read_buffer;
+    ID id_fileno = rb_intern("fileno");
+    // @iov[io] = Fiber.current
+    VALUE iovs = rb_iv_get(self, "@iovs");
+    rb_hash_aset(iovs, io, rb_funcall(Fiber, rb_intern("current"), 0));
+    // register
+    VALUE ring_obj = rb_iv_get(self, "@ring");
+    TypedData_Get_Struct(ring_obj, struct io_uring, &type_uring_payload, ring);
+    struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+    int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
+
+    read_buffer = (char*) xmalloc(NUM2SIZET(length));
+    struct iovec iov = {
+        .iov_base = read_buffer,
+        .iov_len = NUM2SIZET(length),
+    };
+
+    payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
+    payload->is_poll = false;
+    payload->io = (void*)io;
+    payload->poll_mask = 0;
+    
+    io_uring_prep_readv(sqe, fd, &iov, 1, NUM2SIZET(offset));
+    io_uring_sqe_set_data(sqe, payload);
+    io_uring_submit(ring);
+    // Fiber.yield
+    rb_funcall(Fiber, rb_intern("yield"), 0);
+    // @iovs.delete(io)
+    rb_hash_delete(iovs, io);
+
+    VALUE result = rb_str_new(read_buffer, strlen(read_buffer));
+    xfree(read_buffer);
+    if (buffer != Qnil) {
+        rb_str_append(buffer, result);
+    }
+    return result;
+}
+
+VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
+    struct io_uring* ring;
+    struct uring_payload *payload;
+    char* write_buffer;
+    ID id_fileno = rb_intern("fileno");
+    // @iov[io] = Fiber.current
+    VALUE iovs = rb_iv_get(self, "@iovs");
+    rb_hash_aset(iovs, io, rb_funcall(Fiber, rb_intern("current"), 0));
+    // register
+    VALUE ring_obj = rb_iv_get(self, "@ring");
+    TypedData_Get_Struct(ring_obj, struct io_uring, &type_uring_payload, ring);
+    struct io_uring_sqe *sqe = io_uring_get_sqe(ring);
+    int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
+
+    write_buffer = StringValueCStr(buffer);
+    struct iovec iov = {
+        .iov_base = write_buffer,
+        .iov_len = NUM2SIZET(length),
+    };
+
+    payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
+    payload->is_poll = false;
+    payload->io = (void*)io;
+    payload->poll_mask = 0;
+    
+    io_uring_prep_writev(sqe, fd, &iov, 1, NUM2SIZET(offset));
+    io_uring_sqe_set_data(sqe, payload);
+    io_uring_submit(ring);
+    // Fiber.yield
+    rb_funcall(Fiber, rb_intern("yield"), 0);
+    // @iovs.delete(io)
+    rb_hash_delete(iovs, io);
+    return length;
 }
 
 VALUE method_scheduler_backend() {
     return rb_str_new_cstr("liburing");
 }
+
 #elif HAVE_SYS_EPOLL_H // TODO: Do more checks for using epoll
 VALUE method_scheduler_init(VALUE self) {
     rb_iv_set(self, "@epfd", INT2NUM(epoll_create(1))); // Size of epoll is ignored after Linux 2.6.8.
@@ -136,14 +227,17 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     int epfd = NUM2INT(rb_iv_get(self, "@epfd"));
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
     int ruby_interest = NUM2INT(interest);
-    int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_READABLE")));
-    int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_WRITABLE")));
+    int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
+    int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
     
     if (ruby_interest & readable) {
         event.events |= EPOLLIN;
-    } else if (ruby_interest & writable) {
+    }
+
+    if (ruby_interest & writable) {
         event.events |= EPOLLOUT;
     }
+
     event.data.ptr = (void*) io;
 
     epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
@@ -178,7 +272,9 @@ VALUE method_scheduler_wait(VALUE self) {
     struct epoll_event* events = (struct epoll_event*) xmalloc(sizeof(struct epoll_event) * EPOLL_MAX_EVENTS);
     
     n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, timeout);
-    // TODO: Check if n >= 0
+    if (n < 0) {
+        rb_raise(rb_eIOError, "unable to call epoll_wait");
+    }
 
     for (i = 0; i < n; i++) {
         event_flag = events[i].events;
@@ -215,12 +311,14 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     int kq = NUM2INT(rb_iv_get(self, "@kq"));
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
     int ruby_interest = NUM2INT(interest);
-    int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_READABLE")));
-    int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WAIT_WRITABLE")));
+    int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
+    int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
     
     if (ruby_interest & readable) {
         event_flags |= EVFILT_READ;
-    } else if (ruby_interest & writable) {
+    }
+
+    if (ruby_interest & writable) {
         event_flags |= EVFILT_WRITE;
     }
 
@@ -305,14 +403,13 @@ VALUE method_scheduler_wait(VALUE self) {
     // return IO.select(@readable.keys, @writable.keys, [], next_timeout)
     VALUE readable, writable, readable_keys, writable_keys, next_timeout;
     ID id_select = rb_intern("select");
-    ID id_keys = rb_intern("keys");
     ID id_next_timeout = rb_intern("next_timeout");
 
     readable = rb_iv_get(self, "@readable");
     writable = rb_iv_get(self, "@writable");
 
-    readable_keys = rb_funcall(readable, id_keys, 0);
-    writable_keys = rb_funcall(writable, id_keys, 0);
+    readable_keys = rb_funcall(readable, rb_intern("keys"), 0);
+    writable_keys = rb_funcall(writable, rb_intern("keys"), 0);
     next_timeout = rb_funcall(self, id_next_timeout, 0);
 
     return rb_funcall(rb_cIO, id_select, 4, readable_keys, writable_keys, rb_ary_new(), next_timeout);
