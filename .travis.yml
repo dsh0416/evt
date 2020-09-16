@@ -1,23 +1,21 @@
 ---
 language: ruby
 cache: bundler
-rvm: 2.7.1
+rvm: ruby-head
 matrix:
   include:
-    - rvm: 2.7.1
+    - rvm: ruby-head
       os: linux
       dist: xenial
-    - rvm: 2.7.1
+    - rvm: ruby-head
       os: linux
-      dist: focal
+      dist: groovy
       addons:
         apt:
           packages:
             - liburing-dev
-    - rvm: 2.7.1
-      os: osx
     - rvm: ruby-head
-  allow_failures:
+      os: osx
     - rvm: ruby-head
   fast_finish: true
 
