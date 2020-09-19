@@ -211,7 +211,7 @@ VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset
     return length;
 }
 
-VALUE method_scheduler_backend() {
+VALUE method_scheduler_backend(VALUE klass) {
     return rb_str_new_cstr("liburing");
 }
 
@@ -295,7 +295,7 @@ VALUE method_scheduler_wait(VALUE self) {
     return result;
 }
 
-VALUE method_scheduler_backend() {
+VALUE method_scheduler_backend(VALUE klass) {
     return rb_str_new_cstr("epoll");
 }
 #elif HAVE_SYS_EVENT_H
@@ -382,7 +382,7 @@ VALUE method_scheduler_wait(VALUE self) {
     return result;
 }
 
-VALUE method_scheduler_backend() {
+VALUE method_scheduler_backend(VALUE klass) {
     return rb_str_new_cstr("kqueue");
 }
 #else
@@ -415,7 +415,7 @@ VALUE method_scheduler_wait(VALUE self) {
     return rb_funcall(rb_cIO, id_select, 4, readable_keys, writable_keys, rb_ary_new(), next_timeout);
 }
 
-VALUE method_scheduler_backend() {
+VALUE method_scheduler_backend(VALUE klass) {
     return rb_str_new_cstr("ruby");
 }
 #endif

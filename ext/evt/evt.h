@@ -10,7 +10,7 @@ VALUE method_scheduler_init(VALUE self);
 VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest);
 VALUE method_scheduler_deregister(VALUE self, VALUE io);
 VALUE method_scheduler_wait(VALUE self);
-VALUE method_scheduler_backend();
+VALUE method_scheduler_backend(VALUE klass);
 #if HAVELIBURING_H
 VALUE method_scheduler_io_read(VALUE io, VALUE buffer, VALUE offset, VALUE length);
 VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE length);
