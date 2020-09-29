@@ -17,6 +17,8 @@ matrix:
     - rvm: ruby-3.0.0-preview1
       os: osx
     - rvm: ruby-head
+  allow_failures:
+    - rvm: ruby-head
   fast_finish: true
 
 before_install: gem install bundler -v 2.1.4
