@@ -6,6 +6,7 @@ have_library('uring')
 have_header('liburing.h')
 have_header('sys/epoll.h')
 have_header('sys/event.h')
+have_header('Windows.h') 
 
 create_header
 create_makefile(extension_name)

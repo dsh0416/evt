@@ -44,7 +44,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     VALUE ring_obj;
     struct io_uring* ring;
     struct io_uring_sqe *sqe;
-    struct uring_payload *payload;
+    struct uring_data *data;
     short poll_mask = 0;
     ID id_fileno = rb_intern("fileno");
 
@@ -65,13 +65,13 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
         poll_mask |= POLL_OUT;
     }
 
-    payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
-    payload->is_poll = true;
-    payload->io = (void*)io;
-    payload->poll_mask = poll_mask;
+    data = (struct uring_data*) xmalloc(sizeof(struct uring_data));
+    data->is_poll = true;
+    data->io = (void*)io;
+    data->poll_mask = poll_mask;
     
     io_uring_prep_poll_add(sqe, fd, poll_mask);
-    io_uring_sqe_set_data(sqe, payload);
+    io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
     return Qnil;
 }
@@ -84,7 +84,7 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
 VALUE method_scheduler_wait(VALUE self) {
     struct io_uring* ring;
     struct io_uring_cqe *cqes[URING_MAX_EVENTS];
-    struct uring_payload *payload;
+    struct uring_data *data;
     VALUE next_timeout, obj_io, readables, writables, iovs, result;
     unsigned ret, i;
     double time = 0.0;
@@ -103,16 +103,16 @@ VALUE method_scheduler_wait(VALUE self) {
     ret = io_uring_peek_batch_cqe(ring, cqes, URING_MAX_EVENTS);
 
     for (i = 0; i < ret; i++) {
-        payload = (struct uring_payload*) io_uring_cqe_get_data(cqes[i]);
-        poll_events = payload->poll_mask;
-        if (!payload->is_poll) {
-            obj_io = (VALUE) payload->io;
+        data = (struct uring_data*) io_uring_cqe_get_data(cqes[i]);
+        poll_events = data->poll_mask;
+        if (!data->is_poll) {
+            obj_io = (VALUE) data->io;
             rb_funcall(iovs, id_push, 1, obj_io);
         } else if (poll_events & POLL_IN) {
-            obj_io = (VALUE) payload->io;
+            obj_io = (VALUE) data->io;
             rb_funcall(readables, id_push, 1, obj_io);
         } else if (poll_events & POLL_OUT) {
-            obj_io = (VALUE) payload->io;
+            obj_io = (VALUE) data->io;
             rb_funcall(writables, id_push, 1, obj_io);
         }
     }
@@ -137,7 +137,7 @@ VALUE method_scheduler_wait(VALUE self) {
 
 VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
     struct io_uring* ring;
-    struct uring_payload *payload;
+    struct uring_data *data;
     char* read_buffer;
     ID id_fileno = rb_intern("fileno");
     // @iov[io] = Fiber.current
@@ -155,13 +155,13 @@ VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset,
         .iov_len = NUM2SIZET(length),
     };
 
-    payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
-    payload->is_poll = false;
-    payload->io = (void*)io;
-    payload->poll_mask = 0;
+    data = (struct uring_data*) xmalloc(sizeof(struct uring_data));
+    data->is_poll = false;
+    data->io = (void*)io;
+    data->poll_mask = 0;
     
     io_uring_prep_readv(sqe, fd, &iov, 1, NUM2SIZET(offset));
-    io_uring_sqe_set_data(sqe, payload);
+    io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
     // Fiber.yield
     rb_funcall(Fiber, rb_intern("yield"), 0);
@@ -178,7 +178,7 @@ VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset,
 
 VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
     struct io_uring* ring;
-    struct uring_payload *payload;
+    struct uring_data *data;
     char* write_buffer;
     ID id_fileno = rb_intern("fileno");
     // @iov[io] = Fiber.current
@@ -196,13 +196,13 @@ VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset
         .iov_len = NUM2SIZET(length),
     };
 
-    payload = (struct uring_payload*) xmalloc(sizeof(struct uring_payload));
-    payload->is_poll = false;
-    payload->io = (void*)io;
-    payload->poll_mask = 0;
+    data = (struct uring_data*) xmalloc(sizeof(struct uring_data));
+    data->is_poll = false;
+    data->io = (void*)io;
+    data->poll_mask = 0;
     
     io_uring_prep_writev(sqe, fd, &iov, 1, NUM2SIZET(offset));
-    io_uring_sqe_set_data(sqe, payload);
+    io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
     // Fiber.yield
     rb_funcall(Fiber, rb_intern("yield"), 0);
@@ -384,6 +384,73 @@ VALUE method_scheduler_wait(VALUE self) {
 
 VALUE method_scheduler_backend(VALUE klass) {
     return rb_str_new_cstr("kqueue");
+}
+#elif HAVE_WINDOWS_H
+void iocp_payload_free(void* data) {
+    CloseHandle((HANDLE) data);
+}
+
+size_t iocp_payload_size(const void* data) {
+    return sizeof(HANDLE);
+}
+
+VALUE method_scheduler_init(VALUE self) {
+    int ret;
+    HANDLE iocp;
+    iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+    rb_iv_set(self, "@iocp", TypedData_Wrap_Struct(Payload, &type_iocp_payload, iocp));
+    return Qnil;
+}
+
+VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+    HANDLE iocp;
+    VALUE iocp_obj = rb_iv_get(self, "@iocp");
+    TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
+    int fd = NUM2INT(rb_funcallv(io, rb_intern("fileno"), 0, 0));
+    HANDLE io_handler = (HANDLE)rb_w32_get_osfhandle(fd);
+    CreateIoCompletionPort(io_handler, iocp, (ULONG_PTR) io, 0);
+    return Qnil;
+}
+
+VALUE method_scheduler_deregister(VALUE self, VALUE io) {
+    // iocp runs under oneshot mode. No need to deregister.
+    return Qnil;
+}
+
+VALUE method_scheduler_wait(VALUE self) {
+    HANDLE iocp;
+    DWORD timeout;
+    ID id_next_timeout = rb_intern("next_timeout");
+    VALUE iocp_obj = rb_iv_get(self, "@iocp");
+    VALUE next_timeout = rb_funcall(self, id_next_timeout, 0);
+
+    LPOVERLAPPED_ENTRY lpCompletionPortEntries;
+    PULONG ulNumEntriesRemoved;
+    TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
+
+    if (next_timeout == Qnil) {
+        timeout = -1;
+    } else {
+        timeout = NUM2INT(next_timeout) * 1000; // seconds to milliseconds
+    }
+
+    BOOL result = GetQueuedCompletionStatusEx(
+        iocp, lpCompletionPortEntries, IOCP_MAX_EVENTS, ulNumEntriesRemoved, timeout, FALSE);
+
+    // How to check if a IO is written or read???
+    return Qnil;
+}
+
+VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
+    return Qnil;
+}
+
+VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
+    return Qnil;
+}
+
+VALUE method_scheduler_backend(VALUE klass) {
+    return rb_str_new_cstr("iocp");
 }
 #else
 // Fallback to IO.select
