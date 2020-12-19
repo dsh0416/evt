@@ -18,12 +18,17 @@ steps:
   displayName: 'Install Ruby'
 
 - script: |
+    source ~/.profile
     gem install bundler
     bundle install --retry=3 --jobs=4
   displayName: 'bundle install'
 
-- script: bundle exec rake compile
+- script: |
+    source ~/.profile
+    bundle exec rake compile
   displayName: 'bundle exec rake compile'
 
-- script: bundle exec rake
+- script: |
+    source ~/.profile
+    bundle exec rake
   displayName: 'bundle exec rake'
