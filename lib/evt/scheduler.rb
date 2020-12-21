@@ -81,24 +81,6 @@ class Evt::Scheduler
     end
   end
 
-  def wait_readable(io)
-    @readable[io] = Fiber.current
-    self.register(io, IO::READABLE)
-    Fiber.yield
-    @readable.delete(io)
-    self.deregister(io)
-    return true
-  end
-
-  def wait_writable(io)
-    @writable[io] = Fiber.current
-    self.register(io, IO::WRITABLE)
-    Fiber.yield
-    @writable.delete(io)
-    self.deregister(io)
-    return true
-  end
-
   def current_time
     Process.clock_gettime(Process::CLOCK_MONOTONIC)
   end
