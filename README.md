@@ -20,10 +20,10 @@ The Event Library that designed for Ruby 3.0.
 | IOCP            | ❌          | ⚠️ (See 3)  | ❌          | ❌          |
 | Ruby (`select`) | ✅ Fallback | ✅ Fallback | ✅ Fallback | ✅ Fallback |
 
-1:  when liburing is installed
-2:  when kernel version >= 2.6.8
-3:  Working in Progress
-4:  `kqueue` performance in Darwin is very poor. **MAY BE DISABLED IN THE FUTURE.**
+1. when liburing is installed
+2. when kernel version >= 2.6.8
+3. Working in Progress
+4. `kqueue` performance in Darwin is very poor. **MAY BE DISABLED IN THE FUTURE.**
 
 ## Install
 
