@@ -1,6 +1,6 @@
 # evt
 
-[![Build Status](https://travis-ci.org/dsh0416/evt.svg?branch=master)](https://travis-ci.org/dsh0416/evt)
+[![Build Status](https://dev.azure.com/dsh0416/evt/_apis/build/status/dsh0416.evt?branchName=master)](https://dev.azure.com/dsh0416/evt/_build/latest?definitionId=2&branchName=master)
 
 A Handcrafted Low-Level Event Handler designed as Ruby 3 Scheduler. 
 
