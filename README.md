@@ -28,7 +28,7 @@ The Event Library that designed for Ruby 3.0.
 
 ### Benchmark
 
-The benchmark is running under `v.0.2.1` version. See [evt-server-benchmark](https://github.com/dsh0416/evt-server-benchmark) for test code, the test is running under a single-thread server.
+The benchmark is running under `v0.2.1` version. See [evt-server-benchmark](https://github.com/dsh0416/evt-server-benchmark) for test code, the test is running under a single-thread server.
 
 The test command is `wrk -t4 -c1000 -d30s http://localhost:3001`.
 
