@@ -28,7 +28,9 @@ void Init_evt_ext()
 #elif HAVE_SYS_EVENT_H
     #include "kqueue.h"
 #elif HAVE_WINDOWS_H
-    #include "iocp.h"
+    // # include "iocp.h"
+    // IOCP not working, the pipes are not marked with FILE_FLAG_OVERLAPPED
+    #include "select.h"
 #else
     // Fallback to IO.select
     #include "select.h"
