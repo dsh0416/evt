@@ -76,7 +76,7 @@ VALUE method_scheduler_wait(VALUE self) {
 
     GetQueuedCompletionStatusEx(iocp, lpCompletionPortEntries, IOCP_MAX_EVENTS, ulNumEntriesRemoved, timeout, FALSE);
 
-    for (PULONG i = 0; i < ulNumEntriesRemoved; i++) {
+    for (ULONG i = 0; i < *ulNumEntriesRemoved; i++) {
         OVERLAPPED_ENTRY entry = lpCompletionPortEntries[i];
         struct struct iocp_data *data = (struct struct iocp_data*) entry->Internal;
 
