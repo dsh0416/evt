@@ -70,7 +70,6 @@ VALUE method_scheduler_wait(VALUE self) {
     // TODO: Check if n >= 0
     for (i = 0; i < n; i++) {
         event_flags = events[i].filter;
-        printf("event flags: %d\n", event_flags);
         if (event_flags & EVFILT_READ) {
             obj_io = (VALUE) events[i].udata;
             rb_funcall(readables, id_push, 1, obj_io);
