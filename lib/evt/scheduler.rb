@@ -2,12 +2,7 @@
 
 require 'fiber'
 require 'socket'
-
-begin
-  require 'io/nonblock'
-rescue LoadError
-  # Ignore.
-end
+require 'io/nonblock'
 
 class Evt::Scheduler
   def initialize
@@ -15,33 +10,30 @@ class Evt::Scheduler
     @writable = {}
     @iovs = {}
     @waiting = {}
-    @blocking = []
+    
+    @lock = Mutex.new
+    @locking = 0
+    @ready = []
 
     @ios = ObjectSpace::WeakMap.new
     init_selector
   end
 
-  attr :readable
-  attr :writable
-  attr :waiting
-  attr :blocking
+  attr_reader :readable
+  attr_reader :writable
+  attr_reader :waiting
 
   def next_timeout
     _fiber, timeout = @waiting.min_by{|key, value| value}
 
     if timeout
       offset = timeout - current_time
-
-      if offset < 0
-        return 0
-      else
-        return offset
-      end
+      offset < 0 ? 0 : offset
     end
   end
 
   def run
-    while @readable.any? or @writable.any? or @waiting.any? or @iovs.any?
+    while @readable.any? or @writable.any? or @waiting.any? or @iovs.any? or @locking.positive?
       readable, writable, iovs = self.wait
 
       # puts "readable: #{readable}" if readable&.any?
@@ -74,6 +66,19 @@ class Evt::Scheduler
           end
         end
       end
+
+      if @ready.any?
+        ready = nil
+
+        @lock.synchronize do
+          ready, @ready = @ready, []
+        end
+
+        ready.each do |fiber|
+          fiber.resume
+        end
+      end
+
     end
   end
 
@@ -115,75 +120,39 @@ class Evt::Scheduler
     Process.clock_gettime(Process::CLOCK_MONOTONIC)
   end
 
-  def wait_sleep(duration = nil)
-    @waiting[Fiber.current] = current_time + duration
-
-    Fiber.yield
-
-    return true
-  end
-
-  def wait_any(io, events, duration)
-    unless (events & IO::READABLE).zero?
-      @readable[io] = Fiber.current
-    end
-
-    unless (events & IO::WRITABLE).zero?
-      @writable[io] = Fiber.current
-    end
-
+  def io_wait(io, events, duration)
+    @readable[io] = Fiber.current unless (events & IO::READABLE).zero?
+    @writable[io] = Fiber.current unless (events & IO::WRITBLAE).zero?
     self.register(io, events)
-
     Fiber.yield
-
     @readable.delete(io)
     @writable.delete(io)
     self.deregister(io)
-
-    return true
+    true
   end
 
-
-  def wait_for_single_fd(fd, events, duration)
-    wait_any(
-      for_fd(fd),
-      events,
-      duration
-    )
+  def kernel_sleep(duration = nil)
+    @waiting[Fiber.current] = current_time + duration if duration.nil?
+    Fiber.yield
+    true
   end
 
-  def io_read(io, buffer, offset, length)
-    result = ''.dup
-    wait_readable(io)
-    while result.length < offset
-      result << io.read_nonblock(length + offset)
+  def mutex_lock(mutex)
+    @locking += 1
+    Fiber.yield
+  ensure
+    @locking -= 1
+  end
+
+  def mutex_unlock(mutex, fiber)
+    @lock.synchronize do
+      @ready << fiber
     end
-    sliced = result.byteslice(offset..-1)
-    buffer << sliced unless buffer.nil?
-    sliced
-  end
-
-  def io_write(io, buffer, offset, length)
-    pending = buffer.byteslice(offset...offset+length)
-    written = 0
-    while written < pending.bytesize
-      wait_writable(io)
-      written += pending.byteslice(written..-1)
-    end
-  end
-
-  def enter_blocking_region
-    # puts "Enter blocking region: #{caller.first}"
-  end
-
-  def exit_blocking_region
-    # puts "Exit blocking region: #{caller.first}"
-    @blocking << caller.first
   end
 
   def fiber(&block)
     fiber = Fiber.new(blocking: false, &block)
     fiber.resume
-    return fiber
+    fiber
   end
 end
