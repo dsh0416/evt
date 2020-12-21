@@ -37,17 +37,22 @@ gem install evt
 require 'evt'
 
 rd, wr = IO.pipe
-Thread.current.scheduler = Evt::Scheduler.new
+scheduler = Evt::Scheduler.new
 
-hit = 0
-fiber = Fiber.new do
-    scheduler.wait_readable(rd)
-    hit += 1
+Fiber.set_scheduler scheduler
+
+Fiber.schedule do
+  message = rd.read(20)
+  puts message
+  rd.close
 end
 
-wr.write('Hello World')
-fiber.resume
-Thread.current.scheduler.run
+Fiber.schedule do
+  wr.write("Hello World")
+  wr.close
+end
 
-puts hit # => 1
+scheduler.eventloop
+
+# "Hello World"
 ```
