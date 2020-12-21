@@ -56,7 +56,7 @@ VALUE method_scheduler_wait(VALUE self) {
         timeout = NUM2INT(next_timeout);
     }
 
-    struct epoll_event* events = (struct epoll_event*) xmalloc(sizeof(struct epoll_event) * EPOLL_MAX_EVENTS);
+    struct epoll_event events[EPOLL_MAX_EVENTS];
     
     n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, timeout);
     if (n < 0) {
@@ -79,8 +79,6 @@ VALUE method_scheduler_wait(VALUE self) {
     result = rb_ary_new2(2);
     rb_ary_store(result, 0, readables);
     rb_ary_store(result, 1, writables);
-
-    xfree(events);
     return result;
 }
 

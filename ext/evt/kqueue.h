@@ -45,8 +45,7 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
 VALUE method_scheduler_wait(VALUE self) {
     int n, kq, i;
     u_short event_flags = 0;
-
-    struct kevent* events; // Event Triggered
+    struct kevent events[KQUEUE_MAX_EVENTS];
     struct timespec timeout;
     VALUE next_timeout, obj_io, readables, writables, result;
     ID id_next_timeout = rb_intern("next_timeout");
@@ -56,8 +55,6 @@ VALUE method_scheduler_wait(VALUE self) {
     next_timeout = rb_funcall(self, id_next_timeout, 0);
     readables = rb_ary_new();
     writables = rb_ary_new();
-
-    events = (struct kevent*) xmalloc(sizeof(struct kevent) * KQUEUE_MAX_EVENTS);
 
     if (next_timeout == Qnil || NUM2INT(next_timeout) == -1) {
         n = kevent(kq, NULL, 0, events, KQUEUE_MAX_EVENTS, NULL);
@@ -85,7 +82,6 @@ VALUE method_scheduler_wait(VALUE self) {
     rb_ary_store(result, 0, readables);
     rb_ary_store(result, 1, writables);
 
-    xfree(events);
     return result;
 }
 
