@@ -53,21 +53,19 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
 }
 
 VALUE method_scheduler_wait(VALUE self) {
-    HANDLE iocp;
-    DWORD timeout;
     ID id_next_timeout = rb_intern("next_timeout");
     VALUE iocp_obj = rb_iv_get(self, "@iocp");
     VALUE next_timeout = rb_funcall(self, id_next_timeout, 0);
-    VALUE next_timeout, obj_io, readables, writables, iovs, result;
     
     int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
-    next_timeout = rb_funcall(self, id_next_timeout, 0);
 
+    HANDLE iocp;
     LPOVERLAPPED_ENTRY lpCompletionPortEntries;
     PULONG ulNumEntriesRemoved;
     TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
 
+    DWORD timeout;
     if (next_timeout == Qnil) {
         timeout = -1;
     } else {
@@ -76,12 +74,15 @@ VALUE method_scheduler_wait(VALUE self) {
 
     GetQueuedCompletionStatusEx(iocp, lpCompletionPortEntries, IOCP_MAX_EVENTS, ulNumEntriesRemoved, timeout, FALSE);
 
+    VALUE readables = rb_ary_new();
+    VALUE writables = rb_ary_new();
+
     for (ULONG i = 0; i < *ulNumEntriesRemoved; i++) {
         OVERLAPPED_ENTRY entry = lpCompletionPortEntries[i];
-        struct struct iocp_data *data = (struct struct iocp_data*) entry->Internal;
+        struct iocp_data *data = (struct struct iocp_data*) entry->Internal;
 
-        interest = data->interest;
-        obj_io = data->io;
+        int interest = data->interest;
+        VALUE obj_io = data->io;
         if (interest & readable) {
             rb_funcall(readables, id_push, 1, obj_io);
         } else if (interest & writable) {
@@ -91,7 +92,7 @@ VALUE method_scheduler_wait(VALUE self) {
         xfree(data);
     }
     
-    result = rb_ary_new2(2);
+    VALUE result = rb_ary_new2(2);
     rb_ary_store(result, 0, readables);
     rb_ary_store(result, 1, writables);
 
