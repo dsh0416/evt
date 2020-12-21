@@ -20,13 +20,31 @@ VALUE method_scheduler_init(VALUE self) {
 }
 
 VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
-    // TODO: How to deal with interest on Windows?
     HANDLE iocp;
     VALUE iocp_obj = rb_iv_get(self, "@iocp");
+    struct uring_data* data;
     TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
     int fd = NUM2INT(rb_funcallv(io, rb_intern("fileno"), 0, 0));
     HANDLE io_handler = (HANDLE)rb_w32_get_osfhandle(fd);
+    
+    int ruby_interest = NUM2INT(interest);
+    int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
+    int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
+    data = (struct uring_data*) xmalloc(sizeof(struct iocp_data));
+    data->io = io;
+    data->is_poll = true;
+    data->interest = 0;
+
+    if (ruby_interest & readable) {
+        interest |= readable;
+    }
+
+    if (ruby_interest & writable) {
+        interest |= writable;
+    }
+
     CreateIoCompletionPort(io_handler, iocp, (ULONG_PTR) io, 0);
+
     return Qnil;
 }
 
@@ -40,6 +58,8 @@ VALUE method_scheduler_wait(VALUE self) {
     ID id_next_timeout = rb_intern("next_timeout");
     VALUE iocp_obj = rb_iv_get(self, "@iocp");
     VALUE next_timeout = rb_funcall(self, id_next_timeout, 0);
+    int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
+    int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
 
     LPOVERLAPPED_ENTRY lpCompletionPortEntries;
     PULONG ulNumEntriesRemoved;
@@ -54,26 +74,22 @@ VALUE method_scheduler_wait(VALUE self) {
     BOOL result = GetQueuedCompletionStatusEx(
         iocp, lpCompletionPortEntries, IOCP_MAX_EVENTS, ulNumEntriesRemoved, timeout, FALSE);
 
-    // How to check if a IO is written or read???
+    for (PULONG i = 0; i < ulNumEntriesRemoved; i++) {
+        OVERLAPPED_ENTRY entry = lpCompletionPortEntries[i];
+        struct struct iocp_data *data = (struct struct iocp_data*) entry->Internal;
+
+        interest = data->interest;
+        obj_io = data->io;
+        if (interest & readable) {
+            rb_funcall(readables, id_push, 1, obj_io);
+        } else if (interest & writable) {
+            rb_funcall(writables, id_push, 1, obj_io);
+        }
+
+        xfree(data);
+    }
     return Qnil;
 }
-
-VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
-    HANDLE iocp;
-    VALUE iocp_obj = rb_iv_get(self, "@iocp");
-    TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
-    int fd = NUM2INT(rb_funcallv(io, rb_intern("fileno"), 0, 0));
-    HANDLE io_handler = (HANDLE)rb_w32_get_osfhandle(fd);
-    CreateIoCompletionPort(io_handler, iocp, (ULONG_PTR) io, 0);
-}
-
-VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
-    HANDLE iocp;
-    VALUE iocp_obj = rb_iv_get(self, "@iocp");
-    TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
-    int fd = NUM2INT(rb_funcallv(io, rb_intern("fileno"), 0, 0));
-    HANDLE io_handler = (HANDLE)rb_w32_get_osfhandle(fd);
-    CreateIoCompletionPort(io_handler, iocp, (ULONG_PTR) io, 0);
 
 VALUE method_scheduler_backend(VALUE klass) {
     return rb_str_new_cstr("iocp");

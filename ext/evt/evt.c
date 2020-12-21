@@ -15,7 +15,7 @@ void Init_evt_ext()
     rb_define_method(Scheduler, "deregister", method_scheduler_deregister, 1);
     rb_define_method(Scheduler, "wait", method_scheduler_wait, 0);
 
-#if HAVELIBURING_H || HAVE_WINDOWS_H
+#if HAVELIBURING_H
     rb_define_method(Scheduler, "io_read", method_scheduler_io_read, 4);
     rb_define_method(Scheduler, "io_write", method_scheduler_io_read, 4);
 #endif

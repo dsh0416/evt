@@ -62,6 +62,7 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
     struct iocp_data {
         VALUE io;
         bool is_poll;
+        int interest;
     };
 
     void iocp_payload_free(void* data);
