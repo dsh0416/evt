@@ -4,7 +4,7 @@ class TestIO < Minitest::Test
   MESSAGE = "Hello World"
 
   def test_read
-    rd, wr = UNIXSocket.pair
+    rd, wr = IO.pipe
     scheduler = Evt::Scheduler.new
 
     message = nil

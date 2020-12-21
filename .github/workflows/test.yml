@@ -1,4 +1,4 @@
-name: Test this action
+name: CI Tests
 on:
   pull_request:
   push:
