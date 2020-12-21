@@ -74,8 +74,7 @@ VALUE method_scheduler_wait(VALUE self) {
         timeout = NUM2INT(next_timeout) * 1000; // seconds to milliseconds
     }
 
-    BOOL result = GetQueuedCompletionStatusEx(
-        iocp, lpCompletionPortEntries, IOCP_MAX_EVENTS, ulNumEntriesRemoved, timeout, FALSE);
+    GetQueuedCompletionStatusEx(iocp, lpCompletionPortEntries, IOCP_MAX_EVENTS, ulNumEntriesRemoved, timeout, FALSE);
 
     for (PULONG i = 0; i < ulNumEntriesRemoved; i++) {
         OVERLAPPED_ENTRY entry = lpCompletionPortEntries[i];
@@ -91,7 +90,12 @@ VALUE method_scheduler_wait(VALUE self) {
 
         xfree(data);
     }
-    return Qnil;
+    
+    result = rb_ary_new2(2);
+    rb_ary_store(result, 0, readables);
+    rb_ary_store(result, 1, writables);
+
+    return result;
 }
 
 VALUE method_scheduler_backend(VALUE klass) {
