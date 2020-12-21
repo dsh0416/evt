@@ -67,7 +67,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
 
     data = (struct uring_data*) xmalloc(sizeof(struct uring_data));
     data->is_poll = true;
-    data->io = (void*)io;
+    data->io = io;
     data->poll_mask = poll_mask;
     
     io_uring_prep_poll_add(sqe, fd, poll_mask);
@@ -105,16 +105,15 @@ VALUE method_scheduler_wait(VALUE self) {
     for (i = 0; i < ret; i++) {
         data = (struct uring_data*) io_uring_cqe_get_data(cqes[i]);
         poll_events = data->poll_mask;
+        obj_io = data->io;
         if (!data->is_poll) {
-            obj_io = (VALUE) data->io;
             rb_funcall(iovs, id_push, 1, obj_io);
         } else if (poll_events & POLL_IN) {
-            obj_io = (VALUE) data->io;
             rb_funcall(readables, id_push, 1, obj_io);
         } else if (poll_events & POLL_OUT) {
-            obj_io = (VALUE) data->io;
             rb_funcall(writables, id_push, 1, obj_io);
         }
+        xfree(data);
     }
 
     if (ret == 0) {
@@ -157,7 +156,7 @@ VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset,
 
     data = (struct uring_data*) xmalloc(sizeof(struct uring_data));
     data->is_poll = false;
-    data->io = (void*)io;
+    data->io = io;
     data->poll_mask = 0;
     
     io_uring_prep_readv(sqe, fd, &iov, 1, NUM2SIZET(offset));
@@ -196,7 +195,7 @@ VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset
 
     data = (struct uring_data*) xmalloc(sizeof(struct uring_data));
     data->is_poll = false;
-    data->io = (void*)io;
+    data->io = io;
     data->poll_mask = 0;
     
     io_uring_prep_writev(sqe, fd, &iov, 1, NUM2SIZET(offset));
@@ -398,6 +397,7 @@ VALUE method_scheduler_init(VALUE self) {
 }
 
 VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+    // TODO: How to deal with interest on Windows?
     HANDLE iocp;
     VALUE iocp_obj = rb_iv_get(self, "@iocp");
     TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
@@ -408,7 +408,6 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
 }
 
 VALUE method_scheduler_deregister(VALUE self, VALUE io) {
-    // iocp runs under oneshot mode. No need to deregister.
     return Qnil;
 }
 
@@ -437,12 +436,21 @@ VALUE method_scheduler_wait(VALUE self) {
 }
 
 VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
-    return Qnil;
+    HANDLE iocp;
+    VALUE iocp_obj = rb_iv_get(self, "@iocp");
+    TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
+    int fd = NUM2INT(rb_funcallv(io, rb_intern("fileno"), 0, 0));
+    HANDLE io_handler = (HANDLE)rb_w32_get_osfhandle(fd);
+    CreateIoCompletionPort(io_handler, iocp, (ULONG_PTR) io, 0);
 }
 
 VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
-    return Qnil;
-}
+    HANDLE iocp;
+    VALUE iocp_obj = rb_iv_get(self, "@iocp");
+    TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
+    int fd = NUM2INT(rb_funcallv(io, rb_intern("fileno"), 0, 0));
+    HANDLE io_handler = (HANDLE)rb_w32_get_osfhandle(fd);
+    CreateIoCompletionPort(io_handler, iocp, (ULONG_PTR) io, 0);
 
 VALUE method_scheduler_backend(VALUE klass) {
     return rb_str_new_cstr("iocp");

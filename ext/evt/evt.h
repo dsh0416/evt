@@ -27,14 +27,14 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
     #define URING_ENTRIES 64
     #define URING_MAX_EVENTS 64
 
-    void uring_payload_free(void* data);
-    size_t uring_payload_size(const void* data);
-
     struct uring_data {
         bool is_poll;
         short poll_mask;
-        void* io;
+        VALUE io;
     };
+
+    void uring_payload_free(void* data);
+    size_t uring_payload_size(const void* data);
 
     static const rb_data_type_t type_uring_payload = {
         .wrap_struct_name = "uring_payload",
@@ -55,6 +55,12 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
 #elif HAVE_WINDOWS_H
     #include <Windows.h>
     #define IOCP_MAX_EVENTS 64
+
+    struct iocp_data {
+        VALUE io;
+        bool is_poll;
+    };
+
     void iocp_payload_free(void* data);
     size_t iocp_payload_size(const void* data);
 
