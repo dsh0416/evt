@@ -16,13 +16,13 @@ The Event Library that designed for Ruby 3.0.
 | --------------- | ----------- | ------------| ----------- | ----------- |
 | io_uring        | ✅  (See 1) | ❌          | ❌          | ❌          |
 | epoll           | ✅  (See 2) | ❌          | ❌          | ❌          |
-| kqueue          | ❌          | ❌          | ⚠️ (See 4)  | ✅          |
-| IOCP            | ❌          | ⚠️ (See 3)  | ❌          | ❌          |
+| kqueue          | ❌          | ❌          | ✅ (⚠️ See 4) | ✅          |
+| IOCP            | ❌          | ❌ (⚠️See 3) | ❌          | ❌          |
 | Ruby (`select`) | ✅ Fallback | ✅ Fallback | ✅ Fallback | ✅ Fallback |
 
 1. when liburing is installed
 2. when kernel version >= 2.6.8
-3. Working in Progress
+3. WOULD NOT WORK until `FILE_FLAG_OVERLAPPED` is including in I/O initialization process.
 4. `kqueue` performance in Darwin is very poor. **MAY BE DISABLED IN THE FUTURE.**
 
 ## Install
@@ -63,7 +63,7 @@ scheduler.eventloop
 - [x] Upgrade to the latest Scheduler API
 - [x] Support io_uring
 - [x] Support iov features of io_uring
-- [ ] Support IOCP
+- [ ] Support IOCP ()
 - [x] Setup tests with Ruby 3
 - [ ] Support IOCP with iov features
 - [ ] Setup more tests for production purpose

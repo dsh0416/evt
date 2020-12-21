@@ -56,27 +56,28 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
     #include <sys/event.h>
     #define KQUEUE_MAX_EVENTS 64
 #elif HAVE_WINDOWS_H
-    #include <Windows.h>
-    #define IOCP_MAX_EVENTS 64
+    // Currently disable IOCP implementation
+    // #include <Windows.h>
+    // #define IOCP_MAX_EVENTS 64
 
-    struct iocp_data {
-        VALUE io;
-        bool is_poll;
-        int interest;
-    };
+    // struct iocp_data {
+    //     VALUE io;
+    //     bool is_poll;
+    //     int interest;
+    // };
 
-    void iocp_payload_free(void* data);
-    size_t iocp_payload_size(const void* data);
+    // void iocp_payload_free(void* data);
+    // size_t iocp_payload_size(const void* data);
 
-    static const rb_data_type_t type_iocp_payload = {
-        .wrap_struct_name = "iocp_payload",
-        .function = {
-            .dmark = NULL,
-            .dfree = iocp_payload_free,
-            .dsize = iocp_payload_size,
-        },
-        .data = NULL,
-        .flags = RUBY_TYPED_FREE_IMMEDIATELY,
-    };
+    // static const rb_data_type_t type_iocp_payload = {
+    //     .wrap_struct_name = "iocp_payload",
+    //     .function = {
+    //         .dmark = NULL,
+    //         .dfree = iocp_payload_free,
+    //         .dsize = iocp_payload_size,
+    //     },
+    //     .data = NULL,
+    //     .flags = RUBY_TYPED_FREE_IMMEDIATELY,
+    // };
 #endif
 #endif
