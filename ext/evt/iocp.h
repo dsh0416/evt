@@ -43,7 +43,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
         interest |= writable;
     }
 
-    CreateIoCompletionPort(io_handler, iocp, (ULONG_PTR) io, 0);
+    CreateIoCompletionPort(io_handler, iocp, (ULONG_PTR) data, 0);
 
     return Qnil;
 }
