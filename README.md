@@ -34,14 +34,14 @@ The test command is `wrk -t4 -c1000 -d30s http://localhost:3001`.
 
 All of the systems have set their file descriptor limit to maximum.
 
-| CPU         | Memory | Backend                | req/s    |
-| ----------- | ------ | ---------------------- | -------- |
-| Ryzen 2700x | 64GB   | epoll                  | 41492.13 |
-| Ryzen 2700x | 64GB   | io_uring               | 45309.40 |
-| Ryzen 2700x | 64GB   | IO.select (using poll) | 6621.82  |
-| Ryzen 2700x | 64GB   | Blocking I/O           | 1732.34  |
-| i7-6820HQ   | 16GB   | kqueue (macOS)         | 1271.79  |
-| i7-6820HQ   | 16GB   | IO.select (using poll) | 1572.90  |
+| OS    | CPU         | Memory | Backend                | req/s    |
+| ----- | ----------- | ------ | ---------------------- | -------- |
+| Linux | Ryzen 2700x | 64GB   | epoll                  | 41492.13 |
+| Linux | Ryzen 2700x | 64GB   | io_uring               | 45309.40 |
+| Linux | Ryzen 2700x | 64GB   | IO.select (using poll) | 6621.82  |
+| Linux | Ryzen 2700x | 64GB   | Blocking I/O           | 1732.34  |
+| macOS | i7-6820HQ   | 16GB   | kqueue                 | 1271.79  |
+| macOS | i7-6820HQ   | 16GB   | IO.select (using poll) | 1572.90  |
 
 ## Install
 
