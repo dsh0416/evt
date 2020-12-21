@@ -90,16 +90,16 @@ VALUE method_scheduler_wait(VALUE self) {
         data = (struct uring_data*) io_uring_cqe_get_data(cqes[i]);
         poll_events = data->poll_mask;
         obj_io = data->io;
-        if (!data->is_poll) {
+        if (data->is_poll) {
+            if (poll_events & POLL_IN) {
+                rb_funcall(readables, id_push, 1, obj_io);
+            }
+            
+            if (poll_events & POLL_OUT) {
+                rb_funcall(writables, id_push, 1, obj_io);
+            }
+        } else {
             rb_funcall(iovs, id_push, 1, obj_io);
-        }
-        
-        if (poll_events & POLL_IN) {
-            rb_funcall(readables, id_push, 1, obj_io);
-        }
-        
-        if (poll_events & POLL_OUT) {
-            rb_funcall(writables, id_push, 1, obj_io);
         }
         xfree(data);
     }
