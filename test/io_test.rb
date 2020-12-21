@@ -5,6 +5,7 @@ class TestIO < Minitest::Test
   BATCH_SIZE = 16
 
   def test_read
+    raise Minitest::Skip, "Windows IO.pipe is blocking, skipping test", caller if Gem.win_platform?
     rd, wr = IO.pipe
     scheduler = Evt::Scheduler.new
 
@@ -33,6 +34,7 @@ class TestIO < Minitest::Test
   end
 
   def test_batch_read
+    raise Minitest::Skip, "Windows IO.pipe is blocking, skipping test", caller if Gem.win_platform?
     ios = BATCH_SIZE.times.map { IO.pipe }
     results = []
     scheduler = Evt::Scheduler.new
