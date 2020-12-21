@@ -37,8 +37,8 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
     ID id_fileno = rb_intern("fileno");
     int kq = NUM2INT(rb_iv_get(self, "@kq"));
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
-    EV_SET(&event, fd, 0, EV_DELETE, 0, 0, NULL);
-    kevent(kq, &event, 1, NULL, 0, NULL); // TODO: Check the return value
+    EV_SET(&event, fd, 0, EV_DELETE, 0, 0, (void*) io);
+    kevent(kq, &event, 1, NULL, 0, (void*) io); // TODO: Check the return value
     return Qnil;
 }
 
@@ -57,7 +57,7 @@ VALUE method_scheduler_wait(VALUE self) {
     readables = rb_ary_new();
     writables = rb_ary_new();
 
-   events = (struct kevent*) xmalloc(sizeof(struct kevent) * KQUEUE_MAX_EVENTS);
+    events = (struct kevent*) xmalloc(sizeof(struct kevent) * KQUEUE_MAX_EVENTS);
 
     if (next_timeout == Qnil || NUM2INT(next_timeout) == -1) {
         n = kevent(kq, NULL, 0, events, KQUEUE_MAX_EVENTS, NULL);
@@ -70,10 +70,13 @@ VALUE method_scheduler_wait(VALUE self) {
     // TODO: Check if n >= 0
     for (i = 0; i < n; i++) {
         event_flags = events[i].filter;
+        printf("event flags: %d\n", event_flags);
         if (event_flags & EVFILT_READ) {
             obj_io = (VALUE) events[i].udata;
             rb_funcall(readables, id_push, 1, obj_io);
-        } else if (event_flags & EVFILT_WRITE) {
+        }
+        
+        if (event_flags & EVFILT_WRITE) {
             obj_io = (VALUE) events[i].udata;
             rb_funcall(writables, id_push, 1, obj_io);
         }

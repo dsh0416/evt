@@ -92,9 +92,13 @@ VALUE method_scheduler_wait(VALUE self) {
         obj_io = data->io;
         if (!data->is_poll) {
             rb_funcall(iovs, id_push, 1, obj_io);
-        } else if (poll_events & POLL_IN) {
+        }
+        
+        if (poll_events & POLL_IN) {
             rb_funcall(readables, id_push, 1, obj_io);
-        } else if (poll_events & POLL_OUT) {
+        }
+        
+        if (poll_events & POLL_OUT) {
             rb_funcall(writables, id_push, 1, obj_io);
         }
         xfree(data);

@@ -68,7 +68,9 @@ VALUE method_scheduler_wait(VALUE self) {
         if (event_flag & EPOLLIN) {
             obj_io = (VALUE) events[i].data.ptr;
             rb_funcall(readables, id_push, 1, obj_io);
-        } else if (event_flag & EPOLLOUT) {
+        }
+
+        if (event_flag & EPOLLOUT) {
             obj_io = (VALUE) events[i].data.ptr;
             rb_funcall(writables, id_push, 1, obj_io);
         }
