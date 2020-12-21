@@ -1,0 +1,50 @@
+name: Test this action
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: '0 7 * * SUN'
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+        - { os: ubuntu-20.04, ruby: '3.0' }
+        - { os: ubuntu-20.04, ruby: ruby-head }
+        - { os: macos-11.0, ruby: '3.0' }
+        - { os: macos-11.0, ruby: ruby-head }
+        - { os: windows-2019, ruby: mingw }
+        - { os: windows-2019, ruby: mswin }
+    name: ${{ matrix.os }} ${{ matrix.ruby }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby
+        with:
+          ruby-version: ${{ matrix.ruby }}
+          bundler-cache: false
+      - name: Install Dependencies
+        run: |
+            gem install bundler
+            bundle install --jobs 4 --retry 3
+      - name: Compile
+        run: rake compile
+      - name: Test
+        run: rake
+  build:
+    runs-on: ubuntu-20.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: ruby/setup-ruby
+        with:
+          ruby-version: '3.0'
+          bundler-cache: false
+      - name: Install Dependencies
+        run: |
+          gem install bundler
+          bundle install --jobs 4 --retry 3
+      - name: Build
+        run: gem build evt.gemspec

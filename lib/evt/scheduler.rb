@@ -136,4 +136,10 @@ class Evt::Scheduler
     fiber.resume
     fiber
   end
+
+  def eventloop
+    loop do
+      self.run
+    end
+  end
 end
