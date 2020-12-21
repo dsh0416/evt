@@ -12,15 +12,18 @@ The Event Library that designed for Ruby 3.0.
 
 ### IO Backend Support
 
-|                 | Linux                                | Windows                     | macOS         | FreeBSD    |
-| --------------- | ------------------------------------ | --------------------------- | ------------- | ---------- |
-| io_uring        | ✅ <br />when liburing is installed   | ❌                           | ❌             | ❌          |
-| epoll           | ✅ <br />when kernel version >= 2.6.8 | ❌                           | ❌             | ❌          |
-| kqueue          | ❌                                    | ❌                           | ⚠️ (Check <1>) | ✅          |
-| IOCP            | ❌                                    | ⚠️ <br />Working in Progress | ❌             | ❌          |
-| Ruby (`select`) | ✅ Fallback                           | ✅ Fallback                  | ✅ Fallback    | ✅ Fallback |
+|                 | Linux       | Windows     | macOS       | FreeBSD     |
+| --------------- | ----------- | ------------| ----------- | ----------- |
+| io_uring        | ✅  (See 1) | ❌          | ❌          | ❌          |
+| epoll           | ✅  (See 2) | ❌          | ❌          | ❌          |
+| kqueue          | ❌          | ❌          | ⚠️ (See 4)  | ✅          |
+| IOCP            | ❌          | ⚠️ (See 3)  | ❌          | ❌          |
+| Ruby (`select`) | ✅ Fallback | ✅ Fallback | ✅ Fallback | ✅ Fallback |
 
-<1>:  `kqueue` performance in Darwin is very poor. **MAY BE DISABLED IN THE FUTURE.**
+1:  when liburing is installed
+2:  when kernel version >= 2.6.8
+3:  Working in Progress
+4:  `kqueue` performance in Darwin is very poor. **MAY BE DISABLED IN THE FUTURE.**
 
 ## Install
 
