@@ -22,7 +22,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v2
-      - uses: ruby/setup-ruby
+      - uses: ruby/setup-ruby@master
         with:
           ruby-version: ${{ matrix.ruby }}
           bundler-cache: false
@@ -38,7 +38,7 @@ jobs:
     runs-on: ubuntu-20.04
     steps:
       - uses: actions/checkout@v2
-      - uses: ruby/setup-ruby
+      - uses: ruby/setup-ruby@master
         with:
           ruby-version: '3.0'
           bundler-cache: false
