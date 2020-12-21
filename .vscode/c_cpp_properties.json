@@ -1,0 +1,22 @@
+{
+    "configurations": [
+        {
+            "name": "Mac",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${env.HOME}/.rvm/rubies/ruby-head/include/ruby-3.0.0/",
+                "${env.HOME}/.rvm/rubies/ruby-head/include/ruby-3.0.0/ruby/",
+                "${env.HOME}/.rvm/rubies/ruby-head/include/ruby-3.0.0/x86_64-darwin20/"
+            ],
+            "defines": [],
+            "macFrameworkPath": [
+                "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks"
+            ],
+            "compilerPath": "/usr/bin/clang",
+            "cStandard": "c99",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "clang-x64"
+        }
+    ],
+    "version": 4
+}
