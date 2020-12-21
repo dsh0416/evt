@@ -22,7 +22,7 @@ VALUE method_scheduler_init(VALUE self) {
 VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     HANDLE iocp;
     VALUE iocp_obj = rb_iv_get(self, "@iocp");
-    struct uring_data* data;
+    struct iocp_data* data;
     TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
     int fd = NUM2INT(rb_funcallv(io, rb_intern("fileno"), 0, 0));
     HANDLE io_handler = (HANDLE)rb_w32_get_osfhandle(fd);
@@ -30,7 +30,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     int ruby_interest = NUM2INT(interest);
     int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
-    data = (struct uring_data*) xmalloc(sizeof(struct iocp_data));
+    data = (struct iocp_data*) xmalloc(sizeof(struct iocp_data));
     data->io = io;
     data->is_poll = true;
     data->interest = 0;
@@ -58,8 +58,11 @@ VALUE method_scheduler_wait(VALUE self) {
     ID id_next_timeout = rb_intern("next_timeout");
     VALUE iocp_obj = rb_iv_get(self, "@iocp");
     VALUE next_timeout = rb_funcall(self, id_next_timeout, 0);
+    VALUE next_timeout, obj_io, readables, writables, iovs, result;
+    
     int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
+    next_timeout = rb_funcall(self, id_next_timeout, 0);
 
     LPOVERLAPPED_ENTRY lpCompletionPortEntries;
     PULONG ulNumEntriesRemoved;
