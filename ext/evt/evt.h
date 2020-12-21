@@ -1,3 +1,6 @@
+#ifndef EVT_H
+#define EVT_H
+
 #include <ruby.h>
 
 VALUE Evt = Qnil;
@@ -74,4 +77,5 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
         .data = NULL,
         .flags = RUBY_TYPED_FREE_IMMEDIATELY,
     };
+#endif
 #endif
