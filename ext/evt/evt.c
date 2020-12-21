@@ -163,16 +163,14 @@ VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset,
     io_uring_prep_readv(sqe, fd, &iov, 1, NUM2SIZET(offset));
     io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
-    // Fiber.yield
-    rb_funcall(Fiber, rb_intern("yield"), 0);
-    // @iovs.delete(io)
-    rb_hash_delete(iovs, io);
 
     VALUE result = rb_str_new(read_buffer, strlen(read_buffer));
     xfree(read_buffer);
     if (buffer != Qnil) {
         rb_str_append(buffer, result);
     }
+
+    rb_funcall(Fiber, rb_intern("yield"), 0); // Fiber.yield
     return result;
 }
 
@@ -204,10 +202,7 @@ VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset
     io_uring_prep_writev(sqe, fd, &iov, 1, NUM2SIZET(offset));
     io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
-    // Fiber.yield
-    rb_funcall(Fiber, rb_intern("yield"), 0);
-    // @iovs.delete(io)
-    rb_hash_delete(iovs, io);
+    rb_funcall(Fiber, rb_intern("yield"), 0); // Fiber.yield
     return length;
 }
 

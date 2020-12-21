@@ -36,20 +36,20 @@ class Evt::Scheduler
     while @readable.any? or @writable.any? or @waiting.any? or @iovs.any? or @locking.positive?
       readable, writable, iovs = self.wait
 
-      # puts "readable: #{readable}" if readable&.any?
-      # puts "writable: #{writable}" if writable&.any?
-
       readable&.each do |io|
-        @readable[io]&.resume
+        fiber = @readable.delete(io)
+        fiber&.resume
       end
 
       writable&.each do |io|
-        @writable[io]&.resume
+        fiber = @writable.delete(io)
+        fiber&.resume
       end
 
       unless iovs.nil?
         iovs&.each do |io|
-          @iovs[io]&.resume
+          fiber = @iovs.delete(io)
+          fiber&.resume
         end
       end
 
@@ -78,12 +78,7 @@ class Evt::Scheduler
           fiber.resume
         end
       end
-
     end
-  end
-
-  def for_fd(fd)
-    @ios[fd] ||= ::IO.for_fd(fd, autoclose: false)
   end
 
   def wait_readable(io)
@@ -95,12 +90,6 @@ class Evt::Scheduler
     return true
   end
 
-  def wait_readable_fd(fd)
-    wait_readable(
-      for_fd(fd)
-    )
-  end
-
   def wait_writable(io)
     @writable[io] = Fiber.current
     self.register(io, IO::WRITABLE)
@@ -110,23 +99,15 @@ class Evt::Scheduler
     return true
   end
 
-  def wait_writable_fd(fd)
-    wait_writable(
-      for_fd(fd)
-    )
-  end
-
   def current_time
     Process.clock_gettime(Process::CLOCK_MONOTONIC)
   end
 
   def io_wait(io, events, duration)
     @readable[io] = Fiber.current unless (events & IO::READABLE).zero?
-    @writable[io] = Fiber.current unless (events & IO::WRITBLAE).zero?
+    @writable[io] = Fiber.current unless (events & IO::WRITABLE).zero?
     self.register(io, events)
     Fiber.yield
-    @readable.delete(io)
-    @writable.delete(io)
     self.deregister(io)
     true
   end
