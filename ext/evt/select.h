@@ -1,5 +1,5 @@
-#ifndef SELECT_C
-#define SELECT_C
+#ifndef SELECT_H
+#define SELECT_H
 #include "evt.h"
 
 VALUE method_scheduler_init(VALUE self) {

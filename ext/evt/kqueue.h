@@ -1,5 +1,5 @@
-#ifndef KQUEUE_C
-#define KQUEUE_C
+#ifndef KQUEUE_H
+#define KQUEUE_H
 #include "evt.h"
 
 #if HAVE_SYS_EVENT_H

@@ -1,5 +1,5 @@
-#ifndef EPOLL_C
-#define EPOLL_C
+#ifndef EPOLL_H
+#define EPOLL_G
 #include "evt.h"
 
 #if HAVE_SYS_EPOLL_H

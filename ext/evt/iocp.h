@@ -1,5 +1,5 @@
-#ifndef IOCP_C
-#define IOCP_C
+#ifndef IOCP_H
+#define IOCP_H
 #include "evt.h"
 
 #if HAVE_WINDOWS_H

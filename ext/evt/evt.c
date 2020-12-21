@@ -22,15 +22,15 @@ void Init_evt_ext()
 }
 
 #if HAVE_LIBURING_H
-    #include "uring.c"
+    #include "uring.h"
 #elif HAVE_SYS_EPOLL_H
-    #include "epoll.c"
+    #include "epoll.h"
 #elif HAVE_SYS_EVENT_H
-    #include "kqueue.c"
+    #include "kqueue.h"
 #elif HAVE_WINDOWS_H
-    #include "iocp.c"
+    #include "iocp.h"
 #else
     // Fallback to IO.select
-    #include "select.c"
+    #include "select.h"
 #endif
 #endif

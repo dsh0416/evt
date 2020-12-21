@@ -1,5 +1,5 @@
-#ifndef URING_C
-#define URING_C
+#ifndef URING_H
+#define URING_H
 #include "evt.h"
 #if HAVE_LIBURING_H
 void uring_payload_free(void* data) {
