@@ -68,6 +68,7 @@ scheduler.run
 - [x] Support iov features of io_uring
 - [x] Support IOCP (**NOT ENABLED YET**)
 - [x] Setup tests with Ruby 3
+- [ ] Selectable backend compilation by environment variable
 - [ ] Support IOCP with iov features
 - [ ] Setup more tests for production purpose
 - [ ] Documentation for usages
