@@ -23,7 +23,7 @@ The Event Library that designed for Ruby 3.0.
 1. when liburing is installed
 2. when kernel version >= 2.6.8
 3. WOULD NOT WORK until `FILE_FLAG_OVERLAPPED` is including in I/O initialization process.
-4. Some I/Os are not able to be nonblock under Windows. It may raise `IO::EWOULDBLOCKWaitReadable (A non-blocking socket operation could not be completed immediately. - read would block)` when using pure nonblock I/O. But it would block in Windows.
+4. Some I/Os are not able to be nonblock under Windows, still under investigating. See [Bug #17415](https://bugs.ruby-lang.org/issues/17415).
 5. `kqueue` performance in Darwin is very poor. **MAY BE DISABLED IN THE FUTURE.**
 
 ## Install
