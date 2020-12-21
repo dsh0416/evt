@@ -53,7 +53,7 @@ Fiber.schedule do
   wr.close
 end
 
-scheduler.eventloop
+scheduler.run
 
 # "Hello World"
 ```

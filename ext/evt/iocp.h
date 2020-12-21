@@ -12,9 +12,7 @@ size_t iocp_payload_size(const void* data) {
 }
 
 VALUE method_scheduler_init(VALUE self) {
-    int ret;
-    HANDLE iocp;
-    iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
+    HANDLE iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
     rb_iv_set(self, "@iocp", TypedData_Wrap_Struct(Payload, &type_iocp_payload, iocp));
     return Qnil;
 }
@@ -43,7 +41,8 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
         interest |= writable;
     }
 
-    CreateIoCompletionPort(io_handler, iocp, (ULONG_PTR) data, 0);
+    HANDLE res = CreateIoCompletionPort(io_handler, iocp, (ULONG_PTR) data, 0);
+    printf("IO at address: 0x%08x\n", (void *)data);
 
     return Qnil;
 }
@@ -62,40 +61,60 @@ VALUE method_scheduler_wait(VALUE self) {
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
 
     HANDLE iocp;
-    LPOVERLAPPED_ENTRY lpCompletionPortEntries;
-    PULONG ulNumEntriesRemoved;
+    OVERLAPPED_ENTRY lpCompletionPortEntries[IOCP_MAX_EVENTS];
+    ULONG ulNumEntriesRemoved;
     TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
 
     DWORD timeout;
     if (next_timeout == Qnil) {
-        timeout = -1;
+        timeout = 0x5000;
     } else {
         timeout = NUM2INT(next_timeout) * 1000; // seconds to milliseconds
     }
 
-    GetQueuedCompletionStatusEx(iocp, lpCompletionPortEntries, IOCP_MAX_EVENTS, ulNumEntriesRemoved, timeout, FALSE);
+    DWORD NumberOfBytesTransferred;
+    LPOVERLAPPED pOverlapped;
+    ULONG_PTR CompletionKey;
+
+    BOOL res = GetQueuedCompletionStatus(iocp, &NumberOfBytesTransferred, &CompletionKey, &pOverlapped, timeout);
+    // BOOL res = GetQueuedCompletionStatusEx(
+    //    iocp, lpCompletionPortEntries, IOCP_MAX_EVENTS, &ulNumEntriesRemoved, timeout, TRUE);
+
+    VALUE result = rb_ary_new2(2);
 
     VALUE readables = rb_ary_new();
     VALUE writables = rb_ary_new();
 
-    for (ULONG i = 0; i < *ulNumEntriesRemoved; i++) {
-        OVERLAPPED_ENTRY entry = lpCompletionPortEntries[i];
-        struct iocp_data *data = (struct iocp_data*) entry.Internal;
-
-        int interest = data->interest;
-        VALUE obj_io = data->io;
-        if (interest & readable) {
-            rb_funcall(readables, id_push, 1, obj_io);
-        } else if (interest & writable) {
-            rb_funcall(writables, id_push, 1, obj_io);
-        }
-
-        xfree(data);
-    }
-    
-    VALUE result = rb_ary_new2(2);
     rb_ary_store(result, 0, readables);
     rb_ary_store(result, 1, writables);
+
+    if (!result) {
+        return result;
+    }
+
+    printf("--------- Received! ---------\n");
+    printf("Received IO at address: 0x%08x\n", (void *)CompletionKey);
+    printf("dwNumberOfBytesTransferred: %lld\n", NumberOfBytesTransferred);
+
+    // if (ulNumEntriesRemoved > 0) {
+    //     printf("Entries: %ld\n", ulNumEntriesRemoved);
+    // }
+
+    // for (ULONG i = 0; i < ulNumEntriesRemoved; i++) {
+    //     OVERLAPPED_ENTRY entry = lpCompletionPortEntries[i];
+        
+    //     struct iocp_data *data = (struct iocp_data*) entry.lpCompletionKey;
+
+    //     int interest = data->interest;
+    //     VALUE obj_io = data->io;
+    //     if (interest & readable) {
+    //         rb_funcall(readables, id_push, 1, obj_io);
+    //     } else if (interest & writable) {
+    //         rb_funcall(writables, id_push, 1, obj_io);
+    //     }
+
+    //     xfree(data);
+    // }
 
     return result;
 }

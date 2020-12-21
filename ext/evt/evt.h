@@ -56,7 +56,6 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
     #include <sys/event.h>
     #define KQUEUE_MAX_EVENTS 64
 #elif HAVE_WINDOWS_H
-    // Currently disable IOCP implementation
     // #include <Windows.h>
     // #define IOCP_MAX_EVENTS 64
 
