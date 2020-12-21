@@ -16,14 +16,15 @@ The Event Library that designed for Ruby 3.0.
 | --------------- | ----------- | ------------| ----------- | ----------- |
 | io_uring        | ✅  (See 1) | ❌          | ❌          | ❌          |
 | epoll           | ✅  (See 2) | ❌          | ❌          | ❌          |
-| kqueue          | ❌          | ❌          | ✅ (⚠️ See 4) | ✅          |
+| kqueue          | ❌          | ❌          | ✅ (⚠️ See 5) | ✅          |
 | IOCP            | ❌          | ❌ (⚠️See 3) | ❌          | ❌          |
-| Ruby (`select`) | ✅ Fallback | ✅ Fallback | ✅ Fallback | ✅ Fallback |
+| Ruby (`select`) | ✅ Fallback | ✅ (⚠️See 4) | ✅ Fallback | ✅ Fallback |
 
 1. when liburing is installed
 2. when kernel version >= 2.6.8
 3. WOULD NOT WORK until `FILE_FLAG_OVERLAPPED` is including in I/O initialization process.
-4. `kqueue` performance in Darwin is very poor. **MAY BE DISABLED IN THE FUTURE.**
+4. Some I/Os are not able to be nonblock under Windows. It may raise `IO::EWOULDBLOCKWaitReadable (A non-blocking socket operation could not be completed immediately. - read would block)` when using pure nonblock I/O. But it would block in Windows.
+5. `kqueue` performance in Darwin is very poor. **MAY BE DISABLED IN THE FUTURE.**
 
 ## Install
 

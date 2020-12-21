@@ -13,13 +13,13 @@ class TestIO < Minitest::Test
       Fiber.set_scheduler scheduler
 
       Fiber.schedule do
-        message = rd.read(20)
-        rd.close
-      end
-
-      Fiber.schedule do
         wr.write(MESSAGE)
         wr.close
+      end
+      
+      Fiber.schedule do
+        message = rd.read(20)
+        rd.close
       end
 
       scheduler.run
