@@ -101,16 +101,15 @@ VALUE method_scheduler_wait(VALUE self) {
         } else {
             rb_funcall(iovs, id_push, 1, obj_io);
         }
-        xfree(data);
     }
 
     if (ret == 0) {
        if (next_timeout != Qnil && NUM2INT(next_timeout) != -1) {
             // sleep
             time = next_timeout / 1000;
-            rb_funcall(rb_mKernel, id_sleep, 1, RFLOAT_VALUE(time));
+            rb_funcall(rb_mKernel, id_sleep, 1, rb_float_new(time));
        } else {
-            rb_funcall(rb_mKernel, id_sleep, 1, RFLOAT_VALUE(0.001)); // To avoid infinite loop
+            rb_funcall(rb_mKernel, id_sleep, 1, rb_float_new(0.001)); // To avoid infinite loop
        }
     }
 
@@ -152,7 +151,6 @@ VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset,
     io_uring_submit(ring);
 
     VALUE result = rb_str_new(read_buffer, strlen(read_buffer));
-    xfree(read_buffer);
     if (buffer != Qnil) {
         rb_str_append(buffer, result);
     }
