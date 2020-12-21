@@ -4,7 +4,7 @@ The Event Library that designed for Ruby 3.0.
 
 **This gem is still under development, APIs and features are not stable. Advices and PRs are highly welcome.**
 
-![CI Tests](https://github.com/dsh0416/evt/workflows/CI%Tests/badge.svg)
+![CI Tests](https://github.com/dsh0416/evt/workflows/CI%20Tests/badge.svg)
 
 ## Features
 
