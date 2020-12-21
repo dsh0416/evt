@@ -54,6 +54,7 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
 
 VALUE method_scheduler_wait(VALUE self) {
     ID id_next_timeout = rb_intern("next_timeout");
+    ID id_push = rb_intern("push");
     VALUE iocp_obj = rb_iv_get(self, "@iocp");
     VALUE next_timeout = rb_funcall(self, id_next_timeout, 0);
     
@@ -79,7 +80,7 @@ VALUE method_scheduler_wait(VALUE self) {
 
     for (ULONG i = 0; i < *ulNumEntriesRemoved; i++) {
         OVERLAPPED_ENTRY entry = lpCompletionPortEntries[i];
-        struct iocp_data *data = (struct struct iocp_data*) entry->Internal;
+        struct iocp_data *data = (struct iocp_data*) entry.Internal;
 
         int interest = data->interest;
         VALUE obj_io = data->io;

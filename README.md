@@ -56,3 +56,15 @@ scheduler.eventloop
 
 # "Hello World"
 ```
+
+## Roadmap
+
+- [x] Support epoll/kqueue/select
+- [x] Upgrade to the latest Scheduler API
+- [x] Support io_uring
+- [x] Support iov features of io_uring
+- [ ] Support IOCP
+- [x] Setup tests with Ruby 3
+- [ ] Support IOCP with iov features
+- [ ] Setup more tests for production purpose
+- [ ] Documentation for usages
