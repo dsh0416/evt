@@ -10,8 +10,6 @@ The Event Library that designed for Ruby 3.0.
 
 ## Features
 
-
-
 ### IO Backend Support
 
 |                 | Linux       | Windows     | macOS       | FreeBSD     |
@@ -27,6 +25,22 @@ The Event Library that designed for Ruby 3.0.
 3. WOULD NOT WORK until `FILE_FLAG_OVERLAPPED` is included in I/O initialization process.
 4. Some I/Os are not able to be nonblock under Windows. See [Scheduler Docs](https://docs.ruby-lang.org/en/master/doc/scheduler_md.html#label-IO).
 5. `kqueue` performance in Darwin is very poor. **MAY BE DISABLED IN THE FUTURE.**
+
+### Benchmark
+
+The benchmark is running under `v.0.2.1` version. See [evt-server-benchmark](https://github.com/dsh0416/evt-server-benchmark) for test code, the test is running under a single-thread server.
+
+The test command is `wrk -t4 -c1000 -d30s http://localhost:3001`.
+
+All of the systems have set their file descriptor limit to maximum.
+
+| CPU         | Memory | Backend                | req/s    |
+| ----------- | ------ | ---------------------- | -------- |
+| Ryzen 2700x | 64GB   | epoll                  | 41492.13 |
+| Ryzen 2700x | 64GB   | io_uring               | 45309.40 |
+| Ryzen 2700x | 64GB   | IO.select (using poll) | 6621.82  |
+| i7-6820HQ   | 16GB   | kqueue                 | 1271.79  |
+| i7-6820HQ   | 16GB   | IO.select (using poll) | 1572.90  |
 
 ## Install
 
