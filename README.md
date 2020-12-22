@@ -28,20 +28,19 @@ The Event Library that designed for Ruby 3.0 Fiber Scheduler.
 
 ### Benchmark
 
-The benchmark is running under `v0.2.1` version. See [evt-server-benchmark](https://github.com/dsh0416/evt-server-benchmark) for test code, the test is running under a single-thread server.
+The benchmark is running under `v0.2.2` version. See [evt-server-benchmark](https://github.com/dsh0416/evt-server-benchmark) for test code, the test is running under a single-thread server.
 
-The test command is `wrk -t4 -c1000 -d30s http://localhost:3001`.
+The test command is `wrk -t4 -c8192 -d30s http://localhost:3001`.
 
 All of the systems have set their file descriptor limit to maximum.
 
 | OS    | CPU         | Memory | Backend                | req/s    |
 | ----- | ----------- | ------ | ---------------------- | -------- |
-| Linux | Ryzen 2700x | 64GB   | epoll                  | 41492.13 |
-| Linux | Ryzen 2700x | 64GB   | io_uring               | 45309.40 |
-| Linux | Ryzen 2700x | 64GB   | IO.select (using poll) | 6621.82  |
-| Linux | Ryzen 2700x | 64GB   | Blocking I/O           | 1732.34  |
-| macOS | i7-6820HQ   | 16GB   | kqueue                 | 1271.79  |
-| macOS | i7-6820HQ   | 16GB   | IO.select (using poll) | 1572.90  |
+| Linux | Ryzen 2700x | 64GB   | epoll                  | 54680.08 |
+| Linux | Ryzen 2700x | 64GB   | io_uring               | 50245.53 |
+| Linux | Ryzen 2700x | 64GB   | IO.select (using poll) | 44159.23 |
+| macOS | i7-6820HQ   | 16GB   | kqueue                 | 37855.53 |
+| macOS | i7-6820HQ   | 16GB   | IO.select (using poll) | 28293.36 |
 
 ## Install
 
