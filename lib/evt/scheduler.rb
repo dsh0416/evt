@@ -8,7 +8,7 @@ class Evt::Scheduler
       Evt::Kqueue,
       Evt::Iocp,
       Evt::Select,
-    ]
+    ].freeze
 
     def new
       BACKENDS.each do |backend|

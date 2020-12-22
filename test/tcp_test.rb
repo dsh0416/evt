@@ -7,6 +7,7 @@ class TestTCP < Minitest::Test
   PORT = 8765
 
   def test_read
+    raise Minitest::Skip, "Windows CI doesn't have permission, skipping test", caller if Gem.win_platform?
     server = TCPServer.new PORT
     client = TCPSocket.new "127.0.0.1", PORT
     scheduler = Evt::Scheduler.new
@@ -38,6 +39,7 @@ class TestTCP < Minitest::Test
   end
 
   def test_batch_read
+    raise Minitest::Skip, "Windows CI doesn't have permission, skipping test", caller if Gem.win_platform?
     server = TCPServer.new PORT
     clients = BATCH_SIZE.times.map do
       client = TCPSocket.new "127.0.0.1", PORT
