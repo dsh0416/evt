@@ -79,6 +79,12 @@ VALUE method_scheduler_uring_wait(VALUE self) {
     iovs = rb_ary_new();
 
     TypedData_Get_Struct(rb_iv_get(self, "@ring"), struct io_uring, &type_uring_payload, ring);
+
+    struct __kernel_timespec ts;
+    ts.tv_sec = NUM2INT(next_timeout);
+    ts.tv_nsec = 0;
+
+    io_uring_wait_cqe_timeout(ring, cqes, &ts);
     ret = io_uring_peek_batch_cqe(ring, cqes, URING_MAX_EVENTS);
 
     for (i = 0; i < ret; i++) {
@@ -97,16 +103,6 @@ VALUE method_scheduler_uring_wait(VALUE self) {
             rb_funcall(iovs, id_push, 1, obj_io);
         }
         io_uring_cqe_seen(ring, cqes[i]);
-    }
-
-    if (ret == 0) {
-       if (next_timeout != Qnil && NUM2INT(next_timeout) != -1) {
-            // sleep
-            time = next_timeout / 1000;
-            rb_funcall(rb_mKernel, id_sleep, 1, rb_float_new(time));
-       } else {
-            rb_funcall(rb_mKernel, id_sleep, 1, rb_float_new(0.001)); // To avoid infinite loop
-       }
     }
 
     result = rb_ary_new2(3);
@@ -132,27 +128,23 @@ VALUE method_scheduler_uring_io_read(VALUE self, VALUE io, VALUE buffer, VALUE o
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
 
     read_buffer = (char*) xmalloc(NUM2SIZET(length));
-    struct iovec iov = {
-        .iov_base = read_buffer,
-        .iov_len = NUM2SIZET(length),
-    };
 
     data = (struct uring_data*) xmalloc(sizeof(struct uring_data));
     data->is_poll = false;
     data->io = io;
     data->poll_mask = 0;
     
-    io_uring_prep_readv(sqe, fd, &iov, 1, NUM2SIZET(offset));
+    io_uring_prep_read(sqe, fd, read_buffer, 1, NUM2SIZET(length), NUM2SIZET(offset));
     io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
+
+    rb_funcall(Fiber, rb_intern("yield"), 0); // Fiber.yield
 
     VALUE result = rb_str_new(read_buffer, strlen(read_buffer));
     if (buffer != Qnil) {
         rb_str_append(buffer, result);
     }
-
-    rb_funcall(Fiber, rb_intern("yield"), 0); // Fiber.yield
-    return result;
+    return SIZET2NUM(strlen(read_buffer));
 }
 
 VALUE method_scheduler_uring_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
@@ -170,17 +162,13 @@ VALUE method_scheduler_uring_io_write(VALUE self, VALUE io, VALUE buffer, VALUE 
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
 
     write_buffer = StringValueCStr(buffer);
-    struct iovec iov = {
-        .iov_base = write_buffer,
-        .iov_len = NUM2SIZET(length),
-    };
 
     data = (struct uring_data*) xmalloc(sizeof(struct uring_data));
     data->is_poll = false;
     data->io = io;
     data->poll_mask = 0;
     
-    io_uring_prep_writev(sqe, fd, &iov, 1, NUM2SIZET(offset));
+    io_uring_prep_write(sqe, fd, write_buffer, NUM2SIZET(length), NUM2SIZET(offset));
     io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
     rb_funcall(Fiber, rb_intern("yield"), 0); // Fiber.yield

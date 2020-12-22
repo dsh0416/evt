@@ -6,6 +6,7 @@
         "string": "c",
         "string_view": "c",
         "vector": "c",
-        "ranges": "cpp"
+        "ranges": "cpp",
+        "__string": "cpp"
     }
 }
