@@ -13,7 +13,7 @@ Fiber.set_scheduler @scheduler
 puts "Listening on: 127.0.0.1:3002"
 
 def handle_socket(socket)
-  until socket.closed?
+  until socket.closed? # Connection keep-alive
     line = socket.gets
     until line == "\r\n" || line.nil?
       line = socket.gets
@@ -23,7 +23,7 @@ def handle_socket(socket)
 end
 
 Fiber.schedule do
-  while true
+  loop do
     socket, addr = @server.accept
     Fiber.schedule do
       handle_socket(socket)

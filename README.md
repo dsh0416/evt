@@ -70,8 +70,6 @@ Fiber.schedule do
   wr.close
 end
 
-scheduler.run
-
 # "Hello World"
 ```
 
