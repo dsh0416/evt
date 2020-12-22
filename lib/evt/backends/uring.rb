@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Evt::Uring < Evt::Bundled
   def self.available?
     self.respond_to?(:uring_backend)

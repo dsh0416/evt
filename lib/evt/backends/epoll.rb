@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Evt::Epoll < Evt::Bundled
   def self.available?
     self.respond_to?(:epoll_backend)

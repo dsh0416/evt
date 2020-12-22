@@ -1,3 +1,5 @@
+# frozen_string_literal: true
+
 class Evt::Select < Evt::Bundled
   def self.available?
     self.respond_to?(:select_backend)
