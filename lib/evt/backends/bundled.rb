@@ -91,7 +91,7 @@ class Evt::Bundled
   end
 
   def kernel_sleep(duration = nil)
-    @waiting[Fiber.current] = current_time + duration if duration.nil?
+    @waiting[Fiber.current] = current_time + duration unless duration.nil?
     Fiber.yield
     true
   end
