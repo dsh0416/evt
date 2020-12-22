@@ -17,7 +17,7 @@ void Init_evt_ext()
 
 #if HAVELIBURING_H
     rb_define_method(Scheduler, "io_read", method_scheduler_io_read, 4);
-    rb_define_method(Scheduler, "io_write", method_scheduler_io_read, 4);
+    rb_define_method(Scheduler, "io_write", method_scheduler_io_write, 4);
 #endif
 }
 
