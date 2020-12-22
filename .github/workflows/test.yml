@@ -13,9 +13,9 @@ jobs:
       matrix:
         include:
         - { os: ubuntu-20.04, ruby: '3.0' }
-        - { os: ubuntu-20.04, ruby: ruby-head }
+        - { os: ubuntu-20.04, ruby: '3.0', disable-epoll: 1 }
         - { os: macos-11.0, ruby: '3.0' }
-        - { os: macos-11.0, ruby: ruby-head }
+        - { os: macos-11.0, ruby: '3.0', disable-kqueue: 1 }
         - { os: windows-2019, ruby: mingw }
         - { os: windows-2019, ruby: mswin }
     name: ${{ matrix.os }} ${{ matrix.ruby }}
@@ -32,6 +32,9 @@ jobs:
             gem install bundler
             bundle install --jobs 4 --retry 3
       - name: Compile
+        env:
+          DISABLE_EPOLL: ${{ matrix.disable-epoll }}
+          DISABLE_KQUEUE: ${{ matrix.disable-kqueue }}
         run: rake compile
       - name: Test
         run: rake
