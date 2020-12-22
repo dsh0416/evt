@@ -14,7 +14,7 @@ class Evt::Uring < Evt::Bundled
   end
 
   def register(io, interest)
-    uring_register(io, register)
+    uring_register(io, interest)
   end
 
   def deregister(io)
