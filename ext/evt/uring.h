@@ -101,6 +101,7 @@ VALUE method_scheduler_wait(VALUE self) {
         } else {
             rb_funcall(iovs, id_push, 1, obj_io);
         }
+        io_uring_cqe_seen(ring, cqes[i]);
     }
 
     if (ret == 0) {
