@@ -30,5 +30,7 @@ void Init_evt_ext()
 #elif HAVE_WINDOWS_H
     #include "select.h"
     // #include "iocp.h"
+#else
+    #include "select.h"
 #endif
 #endif

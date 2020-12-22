@@ -6,7 +6,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["Delton Ding"]
   spec.email         = ["dsh0416@gmail.com"]
 
-  spec.summary       = "A low-level Event Handler designed for Ruby 3 Scheduler"
+  spec.summary       = "The Event Library that designed for Ruby 3.0 Fiber Scheluer."
   spec.description   = "A low-level Event Handler designed for Ruby 3 Scheduler for better performance"
   spec.homepage      = "https://github.com/dsh0416/evt"
   spec.license       = 'BSD-3-Clause'

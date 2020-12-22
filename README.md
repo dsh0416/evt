@@ -1,6 +1,6 @@
 # Evt
 
-The Event Library that designed for Ruby 3.0.
+The Event Library that designed for Ruby 3.0 Fiber Scheduler.
 
 **This gem is still under development, APIs and features are not stable. Advices and PRs are highly welcome.**
 
@@ -83,7 +83,7 @@ scheduler.run
 - [x] Support iov features of io_uring
 - [x] Support IOCP (**NOT ENABLED YET**)
 - [x] Setup tests with Ruby 3
-- [ ] Selectable backend compilation by environment variable
+- [x] Selectable backend compilation by environment variable
 - [ ] Support IOCP with iov features
 - [ ] Setup more tests for production purpose
 - [ ] Documentation for usages
