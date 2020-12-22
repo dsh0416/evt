@@ -4,12 +4,12 @@
 
 #if HAVE_SYS_EVENT_H
 
-VALUE method_scheduler_init(VALUE self) {
+VALUE method_scheduler_kqueue_init(VALUE self) {
     rb_iv_set(self, "@kq", INT2NUM(kqueue()));
     return Qnil;
 }
 
-VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+VALUE method_scheduler_kqueue_register(VALUE self, VALUE io, VALUE interest) {
     struct kevent event;
     u_short event_flags = 0;
     ID id_fileno = rb_intern("fileno");
@@ -32,12 +32,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     return Qnil;
 }
 
-VALUE method_scheduler_deregister(VALUE self, VALUE io) {
-    // One-shot mode
-    return Qnil;
-}
-
-VALUE method_scheduler_wait(VALUE self) {
+VALUE method_scheduler_kqueue_wait(VALUE self) {
     int n, kq, i;
     u_short event_flags = 0;
     struct kevent events[KQUEUE_MAX_EVENTS];
@@ -80,7 +75,7 @@ VALUE method_scheduler_wait(VALUE self) {
     return result;
 }
 
-VALUE method_scheduler_backend(VALUE klass) {
+VALUE method_scheduler_kqueue_backend(VALUE klass) {
     return rb_str_new_cstr("kqueue");
 }
 #endif

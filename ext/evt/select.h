@@ -2,19 +2,7 @@
 #define SELECT_H
 #include "evt.h"
 
-VALUE method_scheduler_init(VALUE self) {
-    return Qnil;
-}
-
-VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
-    return Qnil;
-}
-
-VALUE method_scheduler_deregister(VALUE self, VALUE io) {
-    return Qnil;
-}
-
-VALUE method_scheduler_wait(VALUE self) {
+VALUE method_scheduler_select_wait(VALUE self) {
     // return IO.select(@readable.keys, @writable.keys, [], next_timeout)
     VALUE readable, writable, readable_keys, writable_keys, next_timeout;
     ID id_select = rb_intern("select");
@@ -30,7 +18,7 @@ VALUE method_scheduler_wait(VALUE self) {
     return rb_funcall(rb_cIO, id_select, 4, readable_keys, writable_keys, rb_ary_new(), next_timeout);
 }
 
-VALUE method_scheduler_backend(VALUE klass) {
+VALUE method_scheduler_select_backend(VALUE klass) {
     return rb_str_new_cstr("ruby");
 }
 #endif

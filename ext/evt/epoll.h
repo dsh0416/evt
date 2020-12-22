@@ -1,14 +1,14 @@
 #ifndef EPOLL_H
-#define EPOLL_G
+#define EPOLL_H
 #include "evt.h"
 
 #if HAVE_SYS_EPOLL_H
-VALUE method_scheduler_init(VALUE self) {
+VALUE method_scheduler_epoll_init(VALUE self) {
     rb_iv_set(self, "@epfd", INT2NUM(epoll_create(1))); // Size of epoll is ignored after Linux 2.6.8.
     return Qnil;
 }
 
-VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest) {
     struct epoll_event event;
     ID id_fileno = rb_intern("fileno");
     int epfd = NUM2INT(rb_iv_get(self, "@epfd"));
@@ -31,7 +31,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     return Qnil;
 }
 
-VALUE method_scheduler_deregister(VALUE self, VALUE io) {
+VALUE method_scheduler_epoll_deregister(VALUE self, VALUE io) {
     ID id_fileno = rb_intern("fileno");
     int epfd = NUM2INT(rb_iv_get(self, "@epfd"));
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
@@ -39,7 +39,7 @@ VALUE method_scheduler_deregister(VALUE self, VALUE io) {
     return Qnil;
 }
 
-VALUE method_scheduler_wait(VALUE self) {
+VALUE method_scheduler_epoll_wait(VALUE self) {
     int n, epfd, i, event_flag, timeout;
     VALUE next_timeout, obj_io, readables, writables, result;
     ID id_next_timeout = rb_intern("next_timeout");
@@ -82,7 +82,7 @@ VALUE method_scheduler_wait(VALUE self) {
     return result;
 }
 
-VALUE method_scheduler_backend(VALUE klass) {
+VALUE method_scheduler_epoll_backend(VALUE klass) {
     return rb_str_new_cstr("epoll");
 }
 #endif

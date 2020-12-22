@@ -12,7 +12,7 @@ size_t uring_payload_size(const void* data) {
     return sizeof(struct io_uring);
 }
 
-VALUE method_scheduler_init(VALUE self) {
+VALUE method_scheduler_uring_init(VALUE self) {
     int ret;
     struct io_uring* ring;
     ring = xmalloc(sizeof(struct io_uring));
@@ -24,7 +24,7 @@ VALUE method_scheduler_init(VALUE self) {
     return Qnil;
 }
 
-VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+VALUE method_scheduler_uring_register(VALUE self, VALUE io, VALUE interest) {
     VALUE ring_obj;
     struct io_uring* ring;
     struct io_uring_sqe *sqe;
@@ -60,12 +60,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     return Qnil;
 }
 
-VALUE method_scheduler_deregister(VALUE self, VALUE io) {
-    // io_uring runs under oneshot mode. No need to deregister.
-    return Qnil;
-}
-
-VALUE method_scheduler_wait(VALUE self) {
+VALUE method_scheduler_uring_wait(VALUE self) {
     struct io_uring* ring;
     struct io_uring_cqe *cqes[URING_MAX_EVENTS];
     struct uring_data *data;
@@ -122,7 +117,7 @@ VALUE method_scheduler_wait(VALUE self) {
     return result;
 }
 
-VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
+VALUE method_scheduler_uring_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
     struct io_uring* ring;
     struct uring_data *data;
     char* read_buffer;
@@ -160,7 +155,7 @@ VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset,
     return result;
 }
 
-VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
+VALUE method_scheduler_uring_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
     struct io_uring* ring;
     struct uring_data *data;
     char* write_buffer;
@@ -192,7 +187,7 @@ VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset
     return length;
 }
 
-VALUE method_scheduler_backend(VALUE klass) {
+VALUE method_scheduler_uring_backend(VALUE klass) {
     return rb_str_new_cstr("liburing");
 }
 

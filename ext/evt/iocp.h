@@ -11,13 +11,13 @@ size_t iocp_payload_size(const void* data) {
     return sizeof(HANDLE);
 }
 
-VALUE method_scheduler_init(VALUE self) {
+VALUE method_scheduler_iocp_init(VALUE self) {
     HANDLE iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 0);
     rb_iv_set(self, "@iocp", TypedData_Wrap_Struct(Payload, &type_iocp_payload, iocp));
     return Qnil;
 }
 
-VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
+VALUE method_scheduler_iocp_register(VALUE self, VALUE io, VALUE interest) {
     HANDLE iocp;
     VALUE iocp_obj = rb_iv_get(self, "@iocp");
     struct iocp_data* data;
@@ -47,11 +47,7 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
     return Qnil;
 }
 
-VALUE method_scheduler_deregister(VALUE self, VALUE io) {
-    return Qnil;
-}
-
-VALUE method_scheduler_wait(VALUE self) {
+VALUE method_scheduler_iocp_wait(VALUE self) {
     ID id_next_timeout = rb_intern("next_timeout");
     ID id_push = rb_intern("push");
     VALUE iocp_obj = rb_iv_get(self, "@iocp");
@@ -119,7 +115,7 @@ VALUE method_scheduler_wait(VALUE self) {
     return result;
 }
 
-VALUE method_scheduler_backend(VALUE klass) {
+VALUE method_scheduler_iocp_backend(VALUE klass) {
     return rb_str_new_cstr("iocp");
 }
 #endif

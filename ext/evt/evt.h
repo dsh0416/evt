@@ -4,29 +4,22 @@
 #include <ruby.h>
 
 VALUE Evt = Qnil;
-VALUE Scheduler = Qnil;
+VALUE Bundled = Qnil;
 VALUE Payload = Qnil;
 VALUE Fiber = Qnil;
 
 void Init_evt_ext();
-VALUE method_scheduler_init(VALUE self);
-VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest);
-VALUE method_scheduler_deregister(VALUE self, VALUE io);
-VALUE method_scheduler_wait(VALUE self);
-VALUE method_scheduler_backend(VALUE klass);
-#if HAVE_LIBURING_H
-VALUE method_scheduler_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length);
-VALUE method_scheduler_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length);
-#endif
-
-#if HAV_WINDOWS_H
-VALUE method_scheduler_io_read(VALUE io, VALUE buffer, VALUE offset, VALUE length);
-VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE length);
-#endif
 
 #if HAVE_LIBURING_H
+    VALUE method_scheduler_uring_init(VALUE self);
+    VALUE method_scheduler_uring_register(VALUE self, VALUE io, VALUE interest);
+    VALUE method_scheduler_uring_deregister(VALUE self, VALUE io);
+    VALUE method_scheduler_uring_wait(VALUE self);
+    VALUE method_scheduler_uring_backend(VALUE klass);
+    VALUE method_scheduler_uring_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length);
+    VALUE method_scheduler_uring_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length);
+
     #include <liburing.h>
-
     #define URING_ENTRIES 64
     #define URING_MAX_EVENTS 64
 
@@ -49,13 +42,26 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
         .data = NULL,
         .flags = RUBY_TYPED_FREE_IMMEDIATELY,
     };
-#elif HAVE_SYS_EPOLL_H
+#endif
+#if HAVE_SYS_EPOLL_H
+    VALUE method_scheduler_epoll_init(VALUE self);
+    VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest);
+    VALUE method_scheduler_epoll_deregister(VALUE self, VALUE io);
+    VALUE method_scheduler_epoll_wait(VALUE self);
+    VALUE method_scheduler_epoll_backend(VALUE klass);
     #include <sys/epoll.h>
     #define EPOLL_MAX_EVENTS 64
-#elif HAVE_SYS_EVENT_H
+#endif
+#if HAVE_SYS_EVENT_H
+    VALUE method_scheduler_kqueue_init(VALUE self);
+    VALUE method_scheduler_kqueue_register(VALUE self, VALUE io, VALUE interest);
+    VALUE method_scheduler_kqueue_deregister(VALUE self, VALUE io);
+    VALUE method_scheduler_kqueue_wait(VALUE self);
+    VALUE method_scheduler_kqueue_backend(VALUE klass);
     #include <sys/event.h>
     #define KQUEUE_MAX_EVENTS 64
-#elif HAVE_WINDOWS_H
+#endif
+#if HAVE_WINDOWS_H
     // #include <Windows.h>
     // #define IOCP_MAX_EVENTS 64
 
@@ -79,4 +85,6 @@ VALUE method_scheduler_io_write(VALUE io, VALUE buffer, VALUE offset, VALUE leng
     //     .flags = RUBY_TYPED_FREE_IMMEDIATELY,
     // };
 #endif
+    VALUE method_scheduler_select_wait(VALUE self);
+    VALUE method_scheduler_select_backend(VALUE klass);
 #endif

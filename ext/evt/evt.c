@@ -9,31 +9,37 @@ void Init_evt_ext()
     rb_ext_ractor_safe(true);
 #endif
     Evt = rb_define_module("Evt");
-    Scheduler = rb_define_class_under(Evt, "Scheduler", rb_cObject);
-    Payload = rb_define_class_under(Scheduler, "Payload", rb_cObject);
+    Bundled = rb_define_class_under(Evt, "Bundled", rb_cObject);
+    Payload = rb_define_class_under(Bundled, "Payload", rb_cObject);
     Fiber = rb_define_class("Fiber", rb_cObject);
-    rb_define_singleton_method(Scheduler, "backend", method_scheduler_backend, 0);
-    rb_define_method(Scheduler, "init_selector", method_scheduler_init, 0);
-    rb_define_method(Scheduler, "register", method_scheduler_register, 2);
-    rb_define_method(Scheduler, "deregister", method_scheduler_deregister, 1);
-    rb_define_method(Scheduler, "wait", method_scheduler_wait, 0);
-
-#if HAVELIBURING_H
-    rb_define_method(Scheduler, "io_read", method_scheduler_io_read, 4);
-    rb_define_method(Scheduler, "io_write", method_scheduler_io_write, 4);
+#if HAVE_LIBURING_H
+    rb_define_singleton_method(Bundled, "uring_backend", method_scheduler_uring_backend, 0);
+    rb_define_method(Bundled, "uring_init_selector", method_scheduler_uring_init, 0);
+    rb_define_method(Bundled, "uring_register", method_scheduler_uring_register, 2);
+    rb_define_method(Bundled, "uring_wait", method_scheduler_uring_wait, 0);
+    rb_define_method(Bundled, "uring_io_read", method_scheduler_uring_io_read, 4);
+    rb_define_method(Bundled, "uring_io_write", method_scheduler_uring_io_write, 4);
 #endif
+#if HAVE_SYS_EPOLL_H
+    rb_define_singleton_method(Bundled, "epoll_backend", method_scheduler_epoll_backend, 0);
+    rb_define_method(Bundled, "epoll_init_selector", method_scheduler_epoll_init, 0);
+    rb_define_method(Bundled, "epoll_register", method_scheduler_epoll_register, 2);
+    rb_define_method(Bundled, "epoll_deregister", method_scheduler_epoll_deregister, 1);
+    rb_define_method(Bundled, "epoll_wait", method_scheduler_epoll_wait, 0);
+#endif
+#if HAVE_SYS_EVENT_H
+    rb_define_singleton_method(Bundled, "kqueue_backend", method_scheduler_kqueue_backend, 0);
+    rb_define_method(Bundled, "kqueue_init_selector", method_scheduler_kqueue_init, 0);
+    rb_define_method(Bundled, "kqueue_register", method_scheduler_kqueue_register, 2);
+    rb_define_method(Bundled, "kqueue_wait", method_scheduler_kqueue_wait, 0);
+#endif
+    rb_define_singleton_method(Bundled, "select_backend", method_scheduler_select_backend, 0);
+    rb_define_method(Bundled, "select_wait", method_scheduler_select_wait, 0);
 }
 
-#if HAVE_LIBURING_H
-    #include "uring.h"
-#elif HAVE_SYS_EPOLL_H
-    #include "epoll.h"
-#elif HAVE_SYS_EVENT_H
-    #include "kqueue.h"
-#elif HAVE_WINDOWS_H
-    #include "select.h"
-    // #include "iocp.h"
-#else
-    #include "select.h"
-#endif
+#include "uring.h"
+#include "epoll.h"
+#include "kqueue.h"
+// #include "iocp.h"
+#include "select.h"
 #endif
