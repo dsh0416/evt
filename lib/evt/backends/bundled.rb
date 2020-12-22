@@ -49,9 +49,10 @@ class Evt::Bundled
       end
 
       unless iovs.nil?
-        iovs&.each do |io|
+        iovs&.each do |v|
+          io, ret = v
           fiber = @iovs.delete(io)
-          fiber&.resume
+          fiber&.resume(ret)
         end
       end
 
@@ -164,6 +165,10 @@ class Evt::Bundled
     
     @writable.keys.each do |io|
       @writable.delete(io) if io.closed?
+    end
+
+    @iovs.keys.each do |io|
+      @iovs.delete(io) if io.closed?
     end
   end
 

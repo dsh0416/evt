@@ -100,7 +100,10 @@ VALUE method_scheduler_uring_wait(VALUE self) {
                 rb_funcall(writables, id_push, 1, obj_io);
             }
         } else {
-            rb_funcall(iovs, id_push, 1, obj_io);
+            VALUE v = rb_ary_new2(2);
+            rb_ary_store(v, 0, obj_io);
+            rb_ary_store(v, 1, obj_io);
+            rb_funcall(iovs, id_push, 1, SIZET2NUM(cqes[i]->res));
         }
         io_uring_cqe_seen(ring, cqes[i]);
     }
@@ -138,13 +141,13 @@ VALUE method_scheduler_uring_io_read(VALUE self, VALUE io, VALUE buffer, VALUE o
     io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
 
-    rb_funcall(Fiber, rb_intern("yield"), 0); // Fiber.yield
+    VALUE ret = rb_funcall(Fiber, rb_intern("yield"), 0); // Fiber.yield
 
     VALUE result = rb_str_new(read_buffer, strlen(read_buffer));
     if (buffer != Qnil) {
         rb_str_append(buffer, result);
     }
-    return SIZET2NUM(strlen(read_buffer));
+    return ret;
 }
 
 VALUE method_scheduler_uring_io_write(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length) {
@@ -171,8 +174,7 @@ VALUE method_scheduler_uring_io_write(VALUE self, VALUE io, VALUE buffer, VALUE 
     io_uring_prep_write(sqe, fd, write_buffer, NUM2SIZET(length), NUM2SIZET(offset));
     io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
-    rb_funcall(Fiber, rb_intern("yield"), 0); // Fiber.yield
-    return length;
+    return rb_funcall(Fiber, rb_intern("yield"), 0);
 }
 
 VALUE method_scheduler_uring_backend(VALUE klass) {
