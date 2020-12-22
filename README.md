@@ -15,13 +15,13 @@ The Event Library that designed for Ruby 3.0 Fiber Scheduler.
 
 |                 | Linux       | Windows     | macOS       | FreeBSD     |
 | --------------- | ----------- | ------------| ----------- | ----------- |
-| io_uring        | ✅  (See 1) | ❌          | ❌          | ❌          |
+| io_uring        | ⚠️  (See 1) | ❌          | ❌          | ❌          |
 | epoll           | ✅  (See 2) | ❌          | ❌          | ❌          |
 | kqueue          | ❌          | ❌          | ✅ (⚠️ See 5) | ✅          |
 | IOCP            | ❌          | ❌ (⚠️See 3) | ❌          | ❌          |
 | Ruby (`IO.select`) | ✅ Fallback | ✅ (⚠️See 4) | ✅ Fallback | ✅ Fallback |
 
-1. when liburing is installed
+1. when liburing is installed. (Currently fixing)
 2. when kernel version >= 2.6.9
 3. WOULD NOT WORK until `FILE_FLAG_OVERLAPPED` is included in I/O initialization process.
 4. Some I/Os are not able to be nonblock under Windows. See [Scheduler Docs](https://docs.ruby-lang.org/en/master/doc/scheduler_md.html#label-IO).
