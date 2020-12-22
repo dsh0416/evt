@@ -9,10 +9,6 @@ class Evt::Epoll < Evt::Bundled
     self.epoll_backend
   end
 
-  def initialize
-    super
-  end
-
   def init_selector
     epoll_init_selector
   end

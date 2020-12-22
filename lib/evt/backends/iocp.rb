@@ -7,10 +7,6 @@ class Evt::Iocp < Evt::Bundled
     false
   end
 
-  def initialize
-    super
-  end
-
   def init_selector
     # Placeholder
   end

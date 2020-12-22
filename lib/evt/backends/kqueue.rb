@@ -9,10 +9,6 @@ class Evt::Kqueue < Evt::Bundled
     self.kqueue_backend
   end
 
-  def initialize
-    super
-  end
-
   def init_selector
     kqueue_init_selector
   end

@@ -9,10 +9,6 @@ class Evt::Uring < Evt::Bundled
     self.uring_backend
   end
 
-  def initialize
-    super
-  end
-
   def init_selector
     uring_init_selector
   end

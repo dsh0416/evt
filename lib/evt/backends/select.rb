@@ -9,10 +9,6 @@ class Evt::Select < Evt::Bundled
     self.select_backend
   end
 
-  def initialize
-    super
-  end
-
   def init_selector
     # Select is stateless
   end

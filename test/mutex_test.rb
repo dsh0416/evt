@@ -43,5 +43,6 @@ class TestMutex < Minitest::Test
     stop = Time.now
     secs = stop - start
     assert_operator secs, :>=, 2
+    assert_operator secs, :<, 2.5
   end
 end

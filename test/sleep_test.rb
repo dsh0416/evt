@@ -25,5 +25,6 @@ class TestSleep < Minitest::Test
     stop = Time.now
     secs = stop - start
     assert_operator secs, :<, 2
+    assert_operator secs, :>=, 0.9
   end
 end

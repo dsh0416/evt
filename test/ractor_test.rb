@@ -8,4 +8,6 @@ class RactorTest < Minitest::Test
       Evt::Scheduler.new
     end
   end
+
+  # TODO: Enrich Ractor tests after GitHub #3971 been merged
 end

@@ -24,4 +24,5 @@ Gem::Specification.new do |spec|
   spec.extensions = ['ext/evt/extconf.rb']
 
   spec.add_development_dependency 'rake-compiler', '~> 1.0'
+  spec.add_development_dependency 'simplecov', '~> 0.20.0'
 end
