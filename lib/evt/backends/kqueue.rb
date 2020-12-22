@@ -22,7 +22,7 @@ class Evt::Kqueue < Evt::Bundled
   end
 
   def deregister(io)
-    # Placeholder
+    # Kqueue running under one-shot mode, no need to deregister
   end
 
   def wait

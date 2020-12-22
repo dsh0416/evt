@@ -14,15 +14,15 @@ class Evt::Select < Evt::Bundled
   end
 
   def init_selector
-    # Placeholder
+    # Select is stateless
   end
 
   def register(io, interest)
-    # Placeholder
+    # Select is stateless
   end
 
   def deregister(io)
-    # Placeholder
+    # Select is stateless
   end
 
   def wait
