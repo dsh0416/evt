@@ -43,6 +43,9 @@ All of the systems have set their file descriptor limit to maximum.
 | macOS | i7-6820HQ   | 16GB   | kqueue                 | 37855.53 |
 | macOS | i7-6820HQ   | 16GB   | IO.select (using poll) | 28293.36 |
 
+The benchmark uses an invalid parser, and `wrk` is very error-sensitive. The benchmark can't close the connection properly.
+Use a valid parser, recent updates to my [midori](https://github.com/midori-rb/midori.rb) is able to use Ruby scheduler, which could achives 247k+ req/s on single thread.
+
 ## Install
 
 ```bash
