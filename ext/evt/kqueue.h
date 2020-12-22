@@ -27,18 +27,13 @@ VALUE method_scheduler_register(VALUE self, VALUE io, VALUE interest) {
         event_flags |= EVFILT_WRITE;
     }
 
-    EV_SET(&event, fd, event_flags, EV_ADD|EV_ENABLE, 0, 0, (void*) io);
+    EV_SET(&event, fd, event_flags, EV_ADD|EV_ENABLE|EV_ONESHOT, 0, 0, (void*) io);
     kevent(kq, &event, 1, NULL, 0, NULL); // TODO: Check the return value
     return Qnil;
 }
 
 VALUE method_scheduler_deregister(VALUE self, VALUE io) {
-    struct kevent event;
-    ID id_fileno = rb_intern("fileno");
-    int kq = NUM2INT(rb_iv_get(self, "@kq"));
-    int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
-    EV_SET(&event, fd, 0, EV_DELETE, 0, 0, (void*) io);
-    kevent(kq, &event, 1, NULL, 0, (void*) io); // TODO: Check the return value
+    // One-shot mode
     return Qnil;
 }
 
