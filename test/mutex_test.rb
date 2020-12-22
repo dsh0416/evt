@@ -1,3 +1,4 @@
+# frozen_string_literal: true
 require "test_helper"
 
 class TestMutex < Minitest::Test
@@ -19,6 +20,7 @@ class TestMutex < Minitest::Test
   end
 
   def test_scheduler_support_mutex_sleep
+    start = Time.now
     semaphore = Mutex.new
     Thread.new do
       scheduler = Evt::Scheduler.new
@@ -27,15 +29,19 @@ class TestMutex < Minitest::Test
 
       Fiber.schedule do
         semaphore.synchronize do
-          sleep 0.1
+          sleep 1
         end
       end
 
       Fiber.schedule do
         semaphore.synchronize do
-          sleep 0.1
+          sleep 1
         end
       end
     end.join
+
+    stop = Time.now
+    secs = stop - start
+    assert_operator secs, :>=, 2
   end
 end
