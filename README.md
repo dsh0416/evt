@@ -29,22 +29,20 @@ The Event Library that designed for Ruby 3.0 Fiber Scheduler.
 
 ### Benchmark
 
-The benchmark is running under `v0.2.2` version. See [evt-server-benchmark](https://github.com/dsh0416/evt-server-benchmark) for test code, the test is running under a single-thread server.
+The benchmark is running under `v0.3.1` version. See `example.rb` in [midori](https://github.com/midori-rb/midori.rb) for test code, the test is running under a single-thread server.
 
 The test command is `wrk -t4 -c8192 -d30s http://localhost:3001`.
 
 All of the systems have set their file descriptor limit to maximum.
+On systems raising "Fiber unable to allocate memory", `sudo sysctl -w vm.max_map_count=1000000` is set.
 
-| OS    | CPU         | Memory | Backend                | req/s    |
-| ----- | ----------- | ------ | ---------------------- | -------- |
-| Linux | Ryzen 2700x | 64GB   | epoll                  | 54680.08 |
-| Linux | Ryzen 2700x | 64GB   | io_uring               | 50245.53 |
-| Linux | Ryzen 2700x | 64GB   | IO.select (using poll) | 44159.23 |
-| macOS | i7-6820HQ   | 16GB   | kqueue                 | 37855.53 |
-| macOS | i7-6820HQ   | 16GB   | IO.select (using poll) | 28293.36 |
-
-The benchmark uses an invalid parser, and `wrk` is very error-sensitive. The benchmark can't close the connection properly.
-Use a valid parser, recent updates to my [midori](https://github.com/midori-rb/midori.rb) is able to use Ruby scheduler, which could achives 247k+ req/s on single thread with `kqueue` and 647k+ req/s with `epoll`.
+| OS    | CPU         | Memory | Backend                | req/s         |
+| ----- | ----------- | ------ | ---------------------- | --------------|
+| Linux | Ryzen 2700x | 64GB   | epoll                  | 1853259.47    |
+| Linux | Ryzen 2700x | 64GB   | io_uring               | require fixes |
+| Linux | Ryzen 2700x | 64GB   | IO.select (using poll) | 1636849.15    |
+| macOS | i7-6820HQ   | 16GB   | kqueue                 | 247370.37     |
+| macOS | i7-6820HQ   | 16GB   | IO.select (using poll) | 323391.38     |
 
 ## Install
 
