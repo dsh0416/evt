@@ -2,6 +2,7 @@
 
 class Evt::Bundled
   MAXIMUM_TIMEOUT = 5
+  COLLECT_COUNTER_MAX = 16384
 
   def initialize
     @readable = {}
@@ -12,6 +13,7 @@ class Evt::Bundled
     @lock = Mutex.new
     @blocking = 0
     @ready = []
+    @collect_counter = 0
   
     init_selector
   end
@@ -52,6 +54,8 @@ class Evt::Bundled
           fiber&.resume
         end
       end
+
+      collect
 
       if @waiting.any?
         time = current_time
@@ -143,6 +147,24 @@ class Evt::Bundled
   # Invoked when the thread exits.
   def close
     self.run
+  end
+
+  # Collect closed streams in readables and writables
+  def collect
+    if @collect_counter < COLLECT_COUNTER_MAX
+      @collect_counter += 1
+      return
+    end
+
+    @collect_counter = 0
+
+    @readable.keys.each do |io|
+      @readable.delete(io) if io.closed?
+    end
+    
+    @writable.keys.each do |io|
+      @writable.delete(io) if io.closed?
+    end
   end
 
   # Intercept the creation of a non-blocking fiber.
