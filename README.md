@@ -4,7 +4,8 @@ The Event Library that designed for Ruby 3.0 Fiber Scheduler.
 
 **This gem is still under development, APIs and features are not stable. Advices and PRs are highly welcome.**
 
-[![CI Tests](https://github.com/dsh0416/evt/workflows/CI%20Tests/badge.svg)](https://github.com/dsh0416/evt/actions?query=workflow%3A%22CI+Tests%22)
+[![CI Tests](https://github.com/dsh0416/evt/workflows/CI%20Tests/badge.svg)](https://github.com/dsh0416/evt/actions?query=workflow%3A%22Build%22)
+[![Build](https://github.com/dsh0416/evt/workflows/Build/badge.svg)](https://github.com/dsh0416/evt/actions?query=workflow%3A%22CI+Tests%22)
 [![Gem Version](https://badge.fury.io/rb/evt.svg)](https://rubygems.org/gems/evt)
 [![Downloads](https://ruby-gem-downloads-badge.herokuapp.com/evt?type=total)](https://rubygems.org/gems/evt)
 

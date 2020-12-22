@@ -3,4 +3,6 @@ require "evt"
 
 require "minitest/autorun"
 
-puts "Available backends: #{Evt::Scheduler.availables}"
+availables = Evt::Scheduler.availables
+puts "Available backends: #{availables}"
+puts "Using: #{availables[0]}"

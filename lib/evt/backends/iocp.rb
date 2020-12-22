@@ -6,4 +6,32 @@ class Evt::Iocp < Evt::Bundled
   def self.available?
     false
   end
+
+  def initialize
+    super
+  end
+
+  def init_selector
+    # Placeholder
+  end
+
+  def register(io, interest)
+    # Placeholder
+  end
+
+  def deregister(io)
+    # Placeholder
+  end
+
+  def io_read(io, buffer, offset, length)
+    # Placeholder
+  end
+
+  def io_write(io, buffer, offset, length)
+    # Placeholder
+  end
+
+  def wait
+    # Placeholder
+  end
 end
