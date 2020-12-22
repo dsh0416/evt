@@ -1,6 +1,8 @@
 # frozen_string_literal: true
 
 class Evt::Bundled
+  MAXIMUM_TIMEOUT = 5
+
   def initialize
     @readable = {}
     @writable = {}
@@ -23,8 +25,11 @@ class Evt::Bundled
 
     if timeout
       offset = timeout - current_time
-      offset < 0 ? 0 : offset
+      return 0 if offset < 0
+      return offset if offset < MAXIMUM_TIMEOUT
     end
+
+    MAXIMUM_TIMEOUT
   end
 
   def run
