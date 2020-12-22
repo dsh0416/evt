@@ -4,14 +4,13 @@ class Evt::Bundled
   def initialize
     @readable = {}
     @writable = {}
-    @iovs = {}
     @waiting = {}
+    @iovs = {}
     
     @lock = Mutex.new
-    @locking = 0
+    @blocking = 0
     @ready = []
-
-    @ios = ObjectSpace::WeakMap.new
+  
     init_selector
   end
 
@@ -29,7 +28,7 @@ class Evt::Bundled
   end
 
   def run
-    while @readable.any? or @writable.any? or @waiting.any? or @iovs.any? or @locking.positive?
+    while @readable.any? or @writable.any? or @waiting.any? or @iovs.any? or @blocking.positive?
       readable, writable, iovs = self.wait
 
       readable&.each do |io|
@@ -51,8 +50,7 @@ class Evt::Bundled
 
       if @waiting.any?
         time = current_time
-        waiting = @waiting
-        @waiting = {}
+        waiting, @waiting = @waiting, {}
 
         waiting.each do |fiber, timeout|
           if timeout <= time
@@ -101,20 +99,8 @@ class Evt::Bundled
   # specified.
   # @param duration [Numeric] The amount of time to sleep in seconds.
   def kernel_sleep(duration = nil)
-    @waiting[Fiber.current] = current_time + duration unless duration.nil?
-    Fiber.yield
+    self.block(:sleep, duration)
     true
-  end
-
-  # Wait for the specified process ID to exit.
-  # This hook is optional.
-  # @parameter pid [Integer] The process ID to wait for.
-  # @parameter flags [Integer] A bit-mask of flags suitable for `Process::Status.wait`.
-  # @returns [Process::Status] A process status instance.
-  def process_wait(pid, flags)
-    Thread.new do
-      Process::Status.wait(pid, flags)
-    end.value
   end
 
   # Block the calling fiber.
@@ -122,6 +108,21 @@ class Evt::Bundled
   # @parameter timeout [Numeric | Nil] The amount of time to wait for in seconds.
   # @returns [Boolean] Whether the blocking operation was successful or not.
   def block(blocker, timeout = nil)
+    if timeout
+      @waiting[Fiber.current] = current_time + timeout
+      begin
+        Fiber.yield
+      ensure
+        @waiting.delete(Fiber.current)
+      end
+    else
+      @blocking += 1
+      begin
+        Fiber.yield
+      ensure
+        @blocking -= 1
+      end
+    end
   end
 
   # Unblock the specified fiber.
@@ -129,6 +130,9 @@ class Evt::Bundled
   # @parameter fiber [Fiber] The fiber to unblock.
   # @reentrant Thread safe.
   def unblock(blocker, fiber)
+    @lock.synchronize do
+      @ready << fiber
+    end
   end
 
   # Invoked when the thread exits.
