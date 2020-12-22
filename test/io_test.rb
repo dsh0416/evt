@@ -22,8 +22,6 @@ class TestIO < Minitest::Test
         message = rd.read(20)
         rd.close
       end
-
-      scheduler.run
     end
 
     thread.join
@@ -54,8 +52,6 @@ class TestIO < Minitest::Test
           wr.close
         end
       end
-
-      scheduler.run
     end
     
     thread.join

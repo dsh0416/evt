@@ -27,8 +27,6 @@ class TestTCP < Minitest::Test
         c.close
         server.close
       end
-
-      scheduler.run
     end
 
     thread.join
@@ -42,7 +40,7 @@ class TestTCP < Minitest::Test
     raise Minitest::Skip, "Windows CI doesn't have permission, skipping test", caller if Gem.win_platform?
     server = TCPServer.new PORT
     clients = BATCH_SIZE.times.map do
-      client = TCPSocket.new "127.0.0.1", PORT
+      TCPSocket.new "127.0.0.1", PORT
     end
     results = []
     scheduler = Evt::Scheduler.new
@@ -65,8 +63,6 @@ class TestTCP < Minitest::Test
         end
         server.close
       end
-
-      scheduler.run
     end
     
     thread.join

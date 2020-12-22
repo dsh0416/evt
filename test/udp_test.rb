@@ -26,8 +26,6 @@ class TestUDP < Minitest::Test
         message = server.recvfrom(20)[0]
         server.close
       end
-
-      scheduler.run
     end
 
     thread.join
@@ -65,8 +63,6 @@ class TestUDP < Minitest::Test
         end
         server.close
       end
-
-      scheduler.run
     end
     
     thread.join
