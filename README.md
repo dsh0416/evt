@@ -18,7 +18,7 @@ The Event Library that designed for Ruby 3.0 Fiber Scheduler.
 | epoll           | ✅  (See 2) | ❌          | ❌          | ❌          |
 | kqueue          | ❌          | ❌          | ✅ (⚠️ See 5) | ✅          |
 | IOCP            | ❌          | ❌ (⚠️See 3) | ❌          | ❌          |
-| Ruby (`select`) | ✅ Fallback | ✅ (⚠️See 4) | ✅ Fallback | ✅ Fallback |
+| Ruby (`IO.select`) | ✅ Fallback | ✅ (⚠️See 4) | ✅ Fallback | ✅ Fallback |
 
 1. when liburing is installed
 2. when kernel version >= 2.6.8

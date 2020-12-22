@@ -5,6 +5,9 @@
 
 void Init_evt_ext()
 {
+#ifdef HAVE_RB_EXT_RACTOR_SAFE
+    rb_ext_ractor_safe(true);
+#endif
     Evt = rb_define_module("Evt");
     Scheduler = rb_define_class_under(Evt, "Scheduler", rb_cObject);
     Payload = rb_define_class_under(Scheduler, "Payload", rb_cObject);
