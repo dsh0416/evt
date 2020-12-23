@@ -17,10 +17,6 @@ class Evt::Select < Evt::Bundled
     # Select is stateless
   end
 
-  def deregister(io)
-    # Select is stateless
-  end
-
   def wait
     select_wait
   end

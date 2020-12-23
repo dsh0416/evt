@@ -101,7 +101,6 @@ class Evt::Bundled
     @writable[io] = Fiber.current unless (events & IO::WRITABLE).zero?
     self.register(io, events)
     Fiber.yield
-    self.deregister(io)
     true
   end
 

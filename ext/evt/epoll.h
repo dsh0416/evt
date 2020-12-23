@@ -25,17 +25,11 @@ VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest) {
         event.events |= EPOLLOUT;
     }
 
+    event.events |=EPOLLONESHOT;
+
     event.data.ptr = (void*) io;
 
     epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
-    return Qnil;
-}
-
-VALUE method_scheduler_epoll_deregister(VALUE self, VALUE io) {
-    ID id_fileno = rb_intern("fileno");
-    int epfd = NUM2INT(rb_iv_get(self, "@epfd"));
-    int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
-    epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL); // Require Linux 2.6.9 for NULL event.
     return Qnil;
 }
 

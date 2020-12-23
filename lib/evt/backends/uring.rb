@@ -17,10 +17,6 @@ class Evt::Uring < Evt::Bundled
     uring_register(io, interest)
   end
 
-  def deregister(io)
-    # io_uring running under one-shot mode, no need to deregister
-  end
-
   def io_read(io, buffer, offset, length)
     uring_io_read(io, buffer, offset, length)
   end

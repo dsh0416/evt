@@ -17,10 +17,6 @@ class Evt::Kqueue < Evt::Bundled
     kqueue_register(io, interest)
   end
 
-  def deregister(io)
-    # Kqueue running under one-shot mode, no need to deregister
-  end
-
   def wait
     kqueue_wait
   end

@@ -13,7 +13,6 @@ void Init_evt_ext();
 #if HAVE_LIBURING_H
     VALUE method_scheduler_uring_init(VALUE self);
     VALUE method_scheduler_uring_register(VALUE self, VALUE io, VALUE interest);
-    VALUE method_scheduler_uring_deregister(VALUE self, VALUE io);
     VALUE method_scheduler_uring_wait(VALUE self);
     VALUE method_scheduler_uring_backend(VALUE klass);
     VALUE method_scheduler_uring_io_read(VALUE self, VALUE io, VALUE buffer, VALUE offset, VALUE length);
@@ -46,7 +45,6 @@ void Init_evt_ext();
 #if HAVE_SYS_EPOLL_H
     VALUE method_scheduler_epoll_init(VALUE self);
     VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest);
-    VALUE method_scheduler_epoll_deregister(VALUE self, VALUE io);
     VALUE method_scheduler_epoll_wait(VALUE self);
     VALUE method_scheduler_epoll_backend(VALUE klass);
     #include <sys/epoll.h>
@@ -55,7 +53,6 @@ void Init_evt_ext();
 #if HAVE_SYS_EVENT_H
     VALUE method_scheduler_kqueue_init(VALUE self);
     VALUE method_scheduler_kqueue_register(VALUE self, VALUE io, VALUE interest);
-    VALUE method_scheduler_kqueue_deregister(VALUE self, VALUE io);
     VALUE method_scheduler_kqueue_wait(VALUE self);
     VALUE method_scheduler_kqueue_backend(VALUE klass);
     #include <sys/event.h>
