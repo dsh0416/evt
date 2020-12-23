@@ -64,7 +64,7 @@ class Evt::Bundled
 
         waiting.each do |fiber, timeout|
           if timeout <= time
-            fiber.resume
+            fiber.resume if fiber.is_a Fiber
           else
             @waiting[fiber] = timeout
           end
