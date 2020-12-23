@@ -21,5 +21,6 @@ class Evt::Select < Evt::Bundled
     select_wait
   rescue Errno::EBADF => e
     collect(true)
+    return [], []
   end
 end
