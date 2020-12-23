@@ -10,7 +10,7 @@ class Evt::Scheduler
   class << self
     BACKENDS = [
       Evt::Uring,
-      # Evt::Epoll,
+      Evt::Epoll,
       Evt::Kqueue,
       Evt::Iocp,
       Evt::Select,
