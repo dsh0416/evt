@@ -26,6 +26,8 @@ VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest) {
         event.events |= EPOLLOUT;
     }
 
+    event.events |= EPOLLRDHUP;
+
     event.data.ptr = (void*) io;
 
     epoll_ctl(epfd, EPOLL_CTL_ADD, fd, &event);
@@ -34,14 +36,13 @@ VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest) {
 
 VALUE method_scheduler_epoll_wait(VALUE self) {
     int n, epfd, i, event_flag, timeout;
-    VALUE next_timeout, obj_io, readables, writables, result;
+    VALUE next_timeout, obj_io, iovs, result;
     ID id_next_timeout = rb_intern("next_timeout");
     ID id_push = rb_intern("push");
     
     epfd = NUM2INT(rb_iv_get(self, "@epfd"));
     next_timeout = rb_funcall(self, id_next_timeout, 0);
-    readables = rb_ary_new();
-    writables = rb_ary_new();
+    iovs = rb_ary_new();
 
     if (next_timeout == Qnil) {
         timeout = -1;
@@ -58,20 +59,17 @@ VALUE method_scheduler_epoll_wait(VALUE self) {
 
     for (i = 0; i < n; i++) {
         event_flag = events[i].events;
-        if (event_flag & EPOLLIN) {
-            obj_io = (VALUE) events[i].data.ptr;
-            rb_funcall(readables, id_push, 1, obj_io);
-        }
-
-        if (event_flag & EPOLLOUT) {
-            obj_io = (VALUE) events[i].data.ptr;
-            rb_funcall(writables, id_push, 1, obj_io);
-        }
+        obj_io = (VALUE) events[i].data.ptr;
+        VALUE e = rb_ary_new2(2);
+        rb_ary_store(e, 0, obj_io);
+        rb_ary_store(e, 1, INT2NUM(event_flag));
+        rb_funcall(iovs, id_push, 1, e);
     }
 
-    result = rb_ary_new2(2);
-    rb_ary_store(result, 0, readables);
-    rb_ary_store(result, 1, writables);
+    result = rb_ary_new2(3);
+    rb_ary_store(result, 0, rb_ary_new());
+    rb_ary_store(result, 1, rb_ary_new());
+    rb_ary_store(result, 2, iovs);
     return result;
 }
 

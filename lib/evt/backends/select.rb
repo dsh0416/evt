@@ -22,6 +22,9 @@ class Evt::Select < Evt::Bundled
 
   def wait
     select_wait
+  rescue IOError => _
+    collect(true)
+    return [], []
   rescue Errno::EBADF => _
     collect(true)
     return [], []
