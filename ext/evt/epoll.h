@@ -3,6 +3,9 @@
 #include "evt.h"
 
 #if HAVE_SYS_EPOLL_H
+
+void epoll_internal_deregister(int epfd, int fd);
+
 VALUE method_scheduler_epoll_init(VALUE self) {
     rb_iv_set(self, "@epfd", INT2NUM(epoll_create(1))); // Size of epoll is ignored after Linux 2.6.8.
     return Qnil;
@@ -24,8 +27,6 @@ VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest) {
     if (ruby_interest & writable) {
         event.events |= EPOLLOUT;
     }
-
-    event.events |=EPOLLONESHOT;
 
     event.data.ptr = (void*) io;
 
@@ -59,6 +60,7 @@ VALUE method_scheduler_epoll_wait(VALUE self) {
 
     for (i = 0; i < n; i++) {
         event_flag = events[i].events;
+        epoll_internal_deregister(epfd, events[i].data.fd);
         if (event_flag & EPOLLIN) {
             obj_io = (VALUE) events[i].data.ptr;
             rb_funcall(readables, id_push, 1, obj_io);
@@ -79,5 +81,10 @@ VALUE method_scheduler_epoll_wait(VALUE self) {
 VALUE method_scheduler_epoll_backend(VALUE klass) {
     return rb_str_new_cstr("epoll");
 }
+
+void epoll_internal_deregister(int epfd, int fd) {
+    epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
+}
+
 #endif
 #endif
