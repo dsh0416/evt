@@ -17,6 +17,9 @@ class Evt::Kqueue < Evt::Bundled
     kqueue_register(io, interest)
   end
 
+  def deregister(io)
+  end
+
   def wait
     kqueue_wait
   end

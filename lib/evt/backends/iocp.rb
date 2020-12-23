@@ -15,6 +15,9 @@ class Evt::Iocp < Evt::Bundled
     # Placeholder
   end
 
+  def deregister(io)
+  end
+
   def io_read(io, buffer, offset, length)
     # Placeholder
   end

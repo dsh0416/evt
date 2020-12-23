@@ -4,8 +4,6 @@
 
 #if HAVE_SYS_EPOLL_H
 
-void epoll_internal_deregister(int epfd, int fd);
-
 VALUE method_scheduler_epoll_init(VALUE self) {
     rb_iv_set(self, "@epfd", INT2NUM(epoll_create(1))); // Size of epoll is ignored after Linux 2.6.8.
     return Qnil;
@@ -69,7 +67,6 @@ VALUE method_scheduler_epoll_wait(VALUE self) {
             obj_io = (VALUE) events[i].data.ptr;
             rb_funcall(writables, id_push, 1, obj_io);
         }
-        epoll_internal_deregister(epfd, events[i].data.fd);
     }
 
     result = rb_ary_new2(2);
@@ -78,13 +75,16 @@ VALUE method_scheduler_epoll_wait(VALUE self) {
     return result;
 }
 
+VALUE method_scheduler_epoll_deregister(VALUE self, VALUE io) {
+    ID id_fileno = rb_intern("fileno");
+    int epfd = NUM2INT(rb_iv_get(self, "@epfd"));
+    int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
+    epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL); // Require Linux 2.6.9 for NULL event.
+    return Qnil;
+}
+
 VALUE method_scheduler_epoll_backend(VALUE klass) {
     return rb_str_new_cstr("epoll");
 }
-
-void epoll_internal_deregister(int epfd, int fd) {
-    epoll_ctl(epfd, EPOLL_CTL_DEL, fd, NULL);
-}
-
 #endif
 #endif

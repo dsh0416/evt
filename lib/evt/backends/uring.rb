@@ -17,6 +17,9 @@ class Evt::Uring < Evt::Bundled
     uring_register(io, interest)
   end
 
+  def deregister(io)
+  end
+
   def io_read(io, buffer, offset, length)
     uring_io_read(io, buffer, offset, length)
   end

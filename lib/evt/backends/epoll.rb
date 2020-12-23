@@ -17,6 +17,10 @@ class Evt::Epoll < Evt::Bundled
     epoll_register(io, interest)
   end
 
+  def deregister(io)
+    epoll_deregister(io)
+  end
+
   def wait
     epoll_wait
   end

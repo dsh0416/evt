@@ -17,6 +17,9 @@ class Evt::Select < Evt::Bundled
     # Select is stateless
   end
 
+  def deregister(io)
+  end
+
   def wait
     select_wait
   rescue Errno::EBADF => _

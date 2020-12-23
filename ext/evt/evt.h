@@ -45,6 +45,7 @@ void Init_evt_ext();
 #if HAVE_SYS_EPOLL_H
     VALUE method_scheduler_epoll_init(VALUE self);
     VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest);
+    VALUE method_scheduler_epoll_deregister(VALUE self, VALUE io);
     VALUE method_scheduler_epoll_wait(VALUE self);
     VALUE method_scheduler_epoll_backend(VALUE klass);
     #include <sys/epoll.h>

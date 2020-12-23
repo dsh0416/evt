@@ -24,6 +24,7 @@ void Init_evt_ext()
     rb_define_singleton_method(Bundled, "epoll_backend", method_scheduler_epoll_backend, 0);
     rb_define_method(Bundled, "epoll_init_selector", method_scheduler_epoll_init, 0);
     rb_define_method(Bundled, "epoll_register", method_scheduler_epoll_register, 2);
+    rb_define_method(Bundled, "epoll_deregister", method_scheduler_epoll_deregister, 1);
     rb_define_method(Bundled, "epoll_wait", method_scheduler_epoll_wait, 0);
 #endif
 #if HAVE_SYS_EVENT_H

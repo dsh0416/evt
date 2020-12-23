@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 class Evt::Bundled
-  MAXIMUM_TIMEOUT = 5
+  MAXIMUM_TIMEOUT = 5000
   COLLECT_COUNTER_MAX = 16384
 
   def initialize
@@ -26,7 +26,7 @@ class Evt::Bundled
     _fiber, timeout = @waiting.min_by{ |key, value| value }
 
     if timeout
-      offset = timeout - current_time
+      offset = (timeout - current_time) * 1000 # Use mililisecond
       return 0 if offset < 0
       return offset if offset < MAXIMUM_TIMEOUT
     end
@@ -101,6 +101,7 @@ class Evt::Bundled
     @writable[io] = Fiber.current unless (events & IO::WRITABLE).zero?
     self.register(io, events)
     Fiber.yield
+    self.deregister(io)
     true
   end
 
