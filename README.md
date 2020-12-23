@@ -30,7 +30,7 @@ The Event Library that designed for Ruby 3.0 Fiber Scheduler.
 
 ### Benchmark
 
-The benchmark is running under `v0.3.5` version. See `example.rb` in [midori](https://github.com/midori-rb/midori.rb) for test code, the test is running under a single-thread server.
+The benchmark is running under `v0.3.6` version. See `example.rb` in [midori](https://github.com/midori-rb/midori.rb) for test code, the test is running under a single-thread server.
 
 The test command is `wrk -t4 -c8192 -d30s http://localhost:8080`.
 
