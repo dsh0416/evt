@@ -23,7 +23,7 @@ class Evt::Bundled
   attr_reader :waiting
 
   def next_timeout
-    _fiber, timeout = @waiting.min_by{|key, value| value}
+    _fiber, timeout = @waiting.min_by{ |key, value| value }
 
     if timeout
       offset = timeout - current_time
@@ -64,7 +64,7 @@ class Evt::Bundled
 
         waiting.each do |fiber, timeout|
           if timeout <= time
-            fiber.resume if fiber.is_a? Fiber
+            fiber.resume if fiber.is_a? Fiber and fiber.alive?
           else
             @waiting[fiber] = timeout
           end
@@ -79,7 +79,7 @@ class Evt::Bundled
         end
 
         ready.each do |fiber|
-          fiber.resume if fiber.is_a? Fiber
+          fiber.resume if fiber.is_a? Fiber and fiber.alive?
         end
       end
     end

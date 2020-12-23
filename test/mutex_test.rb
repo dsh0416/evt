@@ -46,41 +46,6 @@ class TestMutex < Minitest::Test
     assert_operator secs, :<, 2.5
   end
 
-  def test_condition_variable
-    mutex = Mutex.new
-    condition = ConditionVariable.new
-
-    signalled = 0
-
-    Thread.new do
-      scheduler = Evt::Scheduler.new
-      Fiber.set_scheduler scheduler
-
-      Fiber.schedule do
-        mutex.synchronize do
-          3.times do
-            condition.wait(mutex)
-            signalled += 1
-          end
-        end
-      end
-
-      Fiber.schedule do
-        3.times do
-          mutex.synchronize do
-            condition.signal
-          end
-
-          sleep 0.1
-        end
-      end
-
-      scheduler.run
-    end.join
-
-    assert_equal 3, signalled
-  end
-
   def test_queue
     queue = Queue.new
     processed = 0
