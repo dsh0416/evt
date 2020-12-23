@@ -45,6 +45,34 @@ On systems raising "Fiber unable to allocate memory", `sudo sysctl -w vm.max_map
 | macOS | i7-6820HQ   | 16GB   | kqueue                 | 257821.78     |
 | macOS | i7-6820HQ   | 16GB   | IO.select (using poll) | 338392.12     |
 
+We also test the server with Redis request, with a [monkey-patched redis library](https://github.com/midori-rb/midori-contrib/blob/master/lib/midori-contrib/redic.rb). The example code is following:
+
+```ruby
+require 'evt'
+require 'midori'
+require 'midori-contrib/redic'
+
+Fiber.set_scheduler Evt::Scheduler.new
+REDIS = Redic.new
+
+class HelloWorldAPI < Midori::API
+  get '/' do
+    REDIS.call 'GET', 'foo'
+  end
+end
+
+Fiber.schedule do
+  Midori::Runner.new(HelloWorldAPI).start
+end
+```
+
+The benckmark result is as following:
+
+| OS    | CPU         | Memory | Backend | req/s     |
+| ----- | ----------- | ------ | ------- | --------- |
+| Linux | Ryzen 2700x | 64GB   | epoll   | 378060.30 |
+| macOS | i7-6820HQ   | 16GB   | kqueue  | 204460.32 |
+
 ## Install
 
 ```bash
