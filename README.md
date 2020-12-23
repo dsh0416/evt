@@ -19,30 +19,31 @@ The Event Library that designed for Ruby 3.0 Fiber Scheduler.
 | epoll           | ✅  (See 2) | ❌          | ❌          | ❌          |
 | kqueue          | ❌          | ❌          | ✅ (⚠️ See 5) | ✅          |
 | IOCP            | ❌          | ❌ (⚠️See 3) | ❌          | ❌          |
-| Ruby (`IO.select`) | ✅ Fallback | ✅ (⚠️See 4) | ✅ Fallback | ✅ Fallback |
+| Ruby (`IO.select`) | ✅ (See 6) | ✅ (⚠️See 4) | ✅ (See 6) | ✅ (See 6) |
 
 1. when liburing is installed. (Currently fixing)
 2. when kernel version >= 2.6.9
 3. WOULD NOT WORK until `FILE_FLAG_OVERLAPPED` is included in I/O initialization process.
-4. Some I/Os are not able to be nonblock under Windows. See [Scheduler Docs](https://docs.ruby-lang.org/en/master/doc/scheduler_md.html#label-IO).
+4. Some I/Os are not able to be nonblock under Windows. Using POSIX select, **SLOW**. See [Scheduler Docs](https://docs.ruby-lang.org/en/master/doc/scheduler_md.html#label-IO).
 5. `kqueue` performance in Darwin is very poor. **MAY BE DISABLED IN THE FUTURE.**
+6. Using poll
 
 ### Benchmark
 
-The benchmark is running under `v0.3.1` version. See `example.rb` in [midori](https://github.com/midori-rb/midori.rb) for test code, the test is running under a single-thread server.
+The benchmark is running under `v0.3.5` version. See `example.rb` in [midori](https://github.com/midori-rb/midori.rb) for test code, the test is running under a single-thread server.
 
-The test command is `wrk -t4 -c8192 -d30s http://localhost:3001`.
+The test command is `wrk -t4 -c8192 -d30s http://localhost:8080`.
 
 All of the systems have set their file descriptor limit to maximum.
 On systems raising "Fiber unable to allocate memory", `sudo sysctl -w vm.max_map_count=1000000` is set.
 
 | OS    | CPU         | Memory | Backend                | req/s         |
-| ----- | ----------- | ------ | ---------------------- | --------------|
-| Linux | Ryzen 2700x | 64GB   | epoll                  | 1853259.47    |
+| ----- | ----------- | ------ | ---------------------- | ------------- |
+| Linux | Ryzen 2700x | 64GB   | epoll                  | 2035742.59    |
 | Linux | Ryzen 2700x | 64GB   | io_uring               | require fixes |
-| Linux | Ryzen 2700x | 64GB   | IO.select (using poll) | 1636849.15    |
-| macOS | i7-6820HQ   | 16GB   | kqueue                 | 247370.37     |
-| macOS | i7-6820HQ   | 16GB   | IO.select (using poll) | 323391.38     |
+| Linux | Ryzen 2700x | 64GB   | IO.select (using poll) | 1837640.54    |
+| macOS | i7-6820HQ   | 16GB   | kqueue                 | 257821.78     |
+| macOS | i7-6820HQ   | 16GB   | IO.select (using poll) | 338392.12     |
 
 ## Install
 
