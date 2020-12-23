@@ -79,7 +79,7 @@ class Evt::Bundled
         end
 
         ready.each do |fiber|
-          fiber.resume
+          fiber.resume if fiber.is_a? Fiber
         end
       end
     end
