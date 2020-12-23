@@ -150,8 +150,8 @@ class Evt::Bundled
   end
 
   # Collect closed streams in readables and writables
-  def collect
-    if @collect_counter < COLLECT_COUNTER_MAX
+  def collect(force=false)
+    if @collect_counter < COLLECT_COUNTER_MAX and !force
       @collect_counter += 1
       return
     end
