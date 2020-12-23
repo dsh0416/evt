@@ -60,7 +60,6 @@ VALUE method_scheduler_epoll_wait(VALUE self) {
 
     for (i = 0; i < n; i++) {
         event_flag = events[i].events;
-        epoll_internal_deregister(epfd, events[i].data.fd);
         if (event_flag & EPOLLIN) {
             obj_io = (VALUE) events[i].data.ptr;
             rb_funcall(readables, id_push, 1, obj_io);
@@ -70,6 +69,7 @@ VALUE method_scheduler_epoll_wait(VALUE self) {
             obj_io = (VALUE) events[i].data.ptr;
             rb_funcall(writables, id_push, 1, obj_io);
         }
+        epoll_internal_deregister(epfd, events[i].data.fd);
     }
 
     result = rb_ary_new2(2);
