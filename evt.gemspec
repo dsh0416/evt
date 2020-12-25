@@ -10,7 +10,7 @@ Gem::Specification.new do |spec|
   spec.description   = "A low-level Event Handler designed for Ruby 3 Scheduler for better performance"
   spec.homepage      = "https://github.com/dsh0416/evt"
   spec.license       = 'BSD-3-Clause'
-  spec.required_ruby_version = '>= 3.0.0.rc1'
+  spec.required_ruby_version = '>= 3.0.0'
 
   spec.metadata["homepage_uri"] = spec.homepage
   spec.metadata["source_code_uri"] = "https://github.com/dsh0416/evt"

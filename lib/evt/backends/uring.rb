@@ -20,13 +20,14 @@ class Evt::Uring < Evt::Bundled
   def deregister(io)
   end
 
-  def io_read(io, buffer, offset, length)
-    uring_io_read(io, buffer, offset, length)
-  end
+  # Disable direct I/Os for now
+  # def io_read(io, buffer, offset, length)
+  #   uring_io_read(io, buffer, offset, length)
+  # end
 
-  def io_write(io, buffer, offset, length)
-    uring_io_write(io, buffer, offset, length)
-  end
+  # def io_write(io, buffer, offset, length)
+  #   uring_io_write(io, buffer, offset, length)
+  # end
 
   def wait
     uring_wait

@@ -103,6 +103,15 @@ end
 # "Hello World"
 ```
 
+|                | Windows `WaitFor...` | Windows `select` | Windows IOCP | `io_uring` | `epoll` | `kqueue` | `poll` | *NIX `select` |
+| -------------- | -------------------- | ---------------- | ------------ | ---------- | ------- | -------- | ------ | ------------- |
+| Anonymous Pipe | ❌                    | ❌                | ❌            | ✅          | ✅       | ✅        | ✅      | ✅             |
+| Named Pipe     | ❌                    | ❌                | ✅            | ✅          | ✅       | ✅        | ✅      | ✅             |
+| Socket         | ✅                    | ✅                | ✅            | ✅          | ✅       | ✅        | ✅      | ✅             |
+| File           | ✅                    | ✅                | ✅            | ✅          | ✅       | ✅        | ✅      | ✅             |
+
+
+
 ## Roadmap
 
 - [x] Support epoll/kqueue/select
