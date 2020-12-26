@@ -31,10 +31,10 @@ class Evt::Epoll < Evt::Bundled
 
   # def io_read(io, buffer, offset, length)
   #   result = +('')
-    
+
   #   self.register(io, IO::READABLE)
   #   direct_read = io.read_nonblock(length, exception: false)
-  
+
   #   unless direct_read == :wait_readable
   #     result << direct_read
   #   end

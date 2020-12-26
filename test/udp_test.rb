@@ -22,7 +22,7 @@ class TestUDP < Minitest::Test
         client.send(MESSAGE, 0)
         client.close
       end
-      
+
       Fiber.schedule do
         message = server.recvfrom(20)[0]
         server.close
@@ -65,7 +65,7 @@ class TestUDP < Minitest::Test
         server.close
       end
     end
-    
+
     thread.join
 
     assert_equal BATCH_SIZE, results.length

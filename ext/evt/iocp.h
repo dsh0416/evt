@@ -24,7 +24,7 @@ VALUE method_scheduler_iocp_register(VALUE self, VALUE io, VALUE interest) {
     TypedData_Get_Struct(iocp_obj, HANDLE, &type_iocp_payload, iocp);
     int fd = NUM2INT(rb_funcallv(io, rb_intern("fileno"), 0, 0));
     HANDLE io_handler = (HANDLE)rb_w32_get_osfhandle(fd);
-    
+
     int ruby_interest = NUM2INT(interest);
     int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
@@ -52,7 +52,7 @@ VALUE method_scheduler_iocp_wait(VALUE self) {
     ID id_push = rb_intern("push");
     VALUE iocp_obj = rb_iv_get(self, "@iocp");
     VALUE next_timeout = rb_funcall(self, id_next_timeout, 0);
-    
+
     int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
 
@@ -98,7 +98,7 @@ VALUE method_scheduler_iocp_wait(VALUE self) {
 
     // for (ULONG i = 0; i < ulNumEntriesRemoved; i++) {
     //     OVERLAPPED_ENTRY entry = lpCompletionPortEntries[i];
-        
+
     //     struct iocp_data *data = (struct iocp_data*) entry.lpCompletionKey;
 
     //     int interest = data->interest;
