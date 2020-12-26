@@ -18,7 +18,7 @@ VALUE method_scheduler_kqueue_register(VALUE self, VALUE io, VALUE interest) {
     int ruby_interest = NUM2INT(interest);
     int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
-    
+
     if (ruby_interest & readable) {
         event_flags |= EVFILT_READ;
     }
@@ -61,7 +61,7 @@ VALUE method_scheduler_kqueue_wait(VALUE self) {
             obj_io = (VALUE) events[i].udata;
             rb_funcall(readables, id_push, 1, obj_io);
         }
-        
+
         if (event_flags & EVFILT_WRITE) {
             obj_io = (VALUE) events[i].udata;
             rb_funcall(writables, id_push, 1, obj_io);

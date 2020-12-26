@@ -17,7 +17,7 @@ VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest) {
     int ruby_interest = NUM2INT(interest);
     int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
-    
+
     if (ruby_interest & readable) {
         event.events |= EPOLLIN;
     }
@@ -39,7 +39,7 @@ VALUE method_scheduler_epoll_wait(VALUE self) {
     VALUE next_timeout, obj_io, iovs, result;
     ID id_next_timeout = rb_intern("next_timeout");
     ID id_push = rb_intern("push");
-    
+
     epfd = NUM2INT(rb_iv_get(self, "@epfd"));
     next_timeout = rb_funcall(self, id_next_timeout, 0);
     iovs = rb_ary_new();
@@ -51,7 +51,7 @@ VALUE method_scheduler_epoll_wait(VALUE self) {
     }
 
     struct epoll_event events[EPOLL_MAX_EVENTS];
-    
+
     n = epoll_wait(epfd, events, EPOLL_MAX_EVENTS, timeout);
     if (n < 0) {
         rb_raise(rb_eIOError, "unable to call epoll_wait");

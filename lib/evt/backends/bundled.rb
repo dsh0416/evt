@@ -9,12 +9,12 @@ class Evt::Bundled
     @writable = {}
     @waiting = {}
     @iovs = {}
-    
+
     @lock = Mutex.new
     @blocking = 0
     @ready = []
     @collect_counter = 0
-  
+
     init_selector
   end
 
@@ -162,7 +162,7 @@ class Evt::Bundled
     @readable.keys.each do |io|
       @readable.delete(io) if io.closed?
     end
-    
+
     @writable.keys.each do |io|
       @writable.delete(io) if io.closed?
     end
