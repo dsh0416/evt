@@ -18,7 +18,7 @@ VALUE method_scheduler_uring_init(VALUE self) {
     ring = xmalloc(sizeof(struct io_uring));
     ret = io_uring_queue_init(URING_ENTRIES, ring, 0);
     if (ret < 0) {
-        rb_raise(rb_eIOError, "unable to initalize io_uring");
+        rb_raise(rb_eIOError, "unable to initialize io_uring");
     }
     rb_iv_set(self, "@ring", TypedData_Wrap_Struct(Payload, &type_uring_payload, ring));
     return Qnil;
