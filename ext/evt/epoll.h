@@ -24,7 +24,7 @@ VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest) {
     }
 
     if (ruby_interest & priority) {
-        event.events |= PRIORITY;
+        event.events |= EPOLLPRI;
     }
 
     if (ruby_interest & writable) {
