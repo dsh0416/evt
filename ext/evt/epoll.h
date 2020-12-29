@@ -16,10 +16,15 @@ VALUE method_scheduler_epoll_register(VALUE self, VALUE io, VALUE interest) {
     int fd = NUM2INT(rb_funcall(io, id_fileno, 0));
     int ruby_interest = NUM2INT(interest);
     int readable = NUM2INT(rb_const_get(rb_cIO, rb_intern("READABLE")));
+    int priority = NUM2INT(rb_const_get(rb_cIO, rb_intern("PRIORITY")));
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
 
     if (ruby_interest & readable) {
         event.events |= EPOLLIN;
+    }
+
+    if (ruby_interest & priority) {
+        event.events |= PRIORITY;
     }
 
     if (ruby_interest & writable) {
