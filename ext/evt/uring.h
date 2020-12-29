@@ -18,7 +18,7 @@ VALUE method_scheduler_uring_init(VALUE self) {
     ring = xmalloc(sizeof(struct io_uring));
     ret = io_uring_queue_init(URING_ENTRIES, ring, 0);
     if (ret < 0) {
-        rb_raise(rb_eIOError, "unable to initalize io_uring");
+        rb_raise(rb_eIOError, "unable to initialize io_uring");
     }
     rb_iv_set(self, "@ring", TypedData_Wrap_Struct(Payload, &type_uring_payload, ring));
     return Qnil;
@@ -53,7 +53,7 @@ VALUE method_scheduler_uring_register(VALUE self, VALUE io, VALUE interest) {
     data->is_poll = true;
     data->io = io;
     data->poll_mask = poll_mask;
-    
+
     io_uring_prep_poll_add(sqe, fd, poll_mask);
     io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
@@ -95,7 +95,7 @@ VALUE method_scheduler_uring_wait(VALUE self) {
             if (poll_events & POLL_IN) {
                 rb_funcall(readables, id_push, 1, obj_io);
             }
-            
+
             if (poll_events & POLL_OUT) {
                 rb_funcall(writables, id_push, 1, obj_io);
             }
@@ -136,7 +136,7 @@ VALUE method_scheduler_uring_io_read(VALUE self, VALUE io, VALUE buffer, VALUE o
     data->is_poll = false;
     data->io = io;
     data->poll_mask = 0;
-    
+
     io_uring_prep_read(sqe, fd, read_buffer, 1, NUM2SIZET(length), NUM2SIZET(offset));
     io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);
@@ -170,7 +170,7 @@ VALUE method_scheduler_uring_io_write(VALUE self, VALUE io, VALUE buffer, VALUE 
     data->is_poll = false;
     data->io = io;
     data->poll_mask = 0;
-    
+
     io_uring_prep_write(sqe, fd, write_buffer, NUM2SIZET(length), NUM2SIZET(offset));
     io_uring_sqe_set_data(sqe, data);
     io_uring_submit(ring);

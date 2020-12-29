@@ -21,7 +21,7 @@ class TestTCP < Minitest::Test
         client.print(MESSAGE)
         client.close
       end
-      
+
       Fiber.schedule do
         c = server.accept
         message = c.gets
@@ -65,7 +65,7 @@ class TestTCP < Minitest::Test
         server.close
       end
     end
-    
+
     thread.join
 
     assert_equal BATCH_SIZE, results.length

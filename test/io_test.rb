@@ -18,7 +18,7 @@ class TestIO < Minitest::Test
         wr.write(MESSAGE)
         wr.close
       end
-      
+
       Fiber.schedule do
         message = rd.read(20)
         rd.close
@@ -47,14 +47,14 @@ class TestIO < Minitest::Test
           results << rd.read(20)
           rd.close
         end
-  
+
         Fiber.schedule do
           wr.write(MESSAGE)
           wr.close
         end
       end
     end
-    
+
     thread.join
 
     assert_equal BATCH_SIZE, results.length

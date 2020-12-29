@@ -34,7 +34,7 @@ The benchmark is running under `v0.3.6` version. See `example.rb` in [midori](ht
 
 The test command is `wrk -t4 -c8192 -d30s http://localhost:8080`.
 
-All of the systems have set their file descriptor limit to maximum.
+All the systems have set their file descriptor limit to maximum.
 On systems raising "Fiber unable to allocate memory", `sudo sysctl -w vm.max_map_count=1000000` is set.
 
 | OS    | CPU         | Memory | Backend                | req/s         |
@@ -66,7 +66,7 @@ Fiber.schedule do
 end
 ```
 
-The benckmark result is as following:
+The benchmark result is as following:
 
 | OS    | CPU         | Memory | Backend | req/s     |
 | ----- | ----------- | ------ | ------- | --------- |
