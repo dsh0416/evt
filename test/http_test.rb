@@ -23,6 +23,6 @@ class TestHTTP < Minitest::Test
 
     thread.join
 
-    assert_equal(MESSAGE, message)
+    assert_equal(MESSAGE, message.split("\n")[0])
   end
 end

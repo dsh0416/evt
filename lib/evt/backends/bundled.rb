@@ -6,7 +6,6 @@ class Evt::Bundled
 
   def initialize
     @readable = {}
-    @priority = {}
     @writable = {}
     @waiting = {}
     @iovs = {}
@@ -41,19 +40,19 @@ class Evt::Bundled
 
       readable&.each do |io|
         fiber = @readable.delete(io)
-        fiber&.resume
+        fiber.resume if fiber&.alive?
       end
 
       writable&.each do |io|
         fiber = @writable.delete(io)
-        fiber&.resume
+        fiber.resume if fiber&.alive?
       end
 
       unless iovs.nil?
         iovs&.each do |v|
           io, ret = v
           fiber = @iovs.delete(io)
-          fiber&.resume(ret)
+          fiber.resume(ret) if fiber&.alive?
         end
       end
 
@@ -97,15 +96,12 @@ class Evt::Bundled
   # @parameter timeout [Numeric] The amount of time to wait for the event in seconds.
   # @returns [Integer] The subset of events that are ready.
   def io_wait(io, events, duration)
-    p events
     @readable[io] = Fiber.current unless (events & IO::READABLE).zero?
-    @priority[io] = Fiber.current unless (events & IO::PRIORITY).zero?
     @writable[io] = Fiber.current unless (events & IO::WRITABLE).zero?
     self.register(io, events)
     Fiber.yield
     self.deregister(io)
 
-    p events
     events
   end
 
