@@ -16,8 +16,7 @@ jobs:
         - { os: ubuntu-20.04, ruby: '3.0', backend: ruby, disable-epoll: 1 }
         - { os: macos-11.0, ruby: '3.0', backend: kqueue }
         - { os: macos-11.0, ruby: '3.0', backend: ruby, disable-kqueue: 1 }
-        - { os: windows-2019, ruby: mingw, backend: ruby }
-        - { os: windows-2019, ruby: mswin, backend: ruby }
+        - { os: windows-2019, ruby: '3.0', backend: ruby }
     name: test ${{ matrix.os }} ${{ matrix.ruby }} ${{ matrix.backend }}
     runs-on: ${{ matrix.os }}
     timeout-minutes: 5
