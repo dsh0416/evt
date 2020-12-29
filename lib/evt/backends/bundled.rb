@@ -102,7 +102,7 @@ class Evt::Bundled
     self.register(io, events)
     Fiber.yield
     self.deregister(io)
-    true
+    events
   end
 
   # Sleep the current task for the specified duration, or forever if not
