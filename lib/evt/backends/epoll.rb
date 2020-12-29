@@ -26,7 +26,7 @@ class Evt::Epoll < Evt::Bundled
     self.register(io, events)
     Fiber.yield
     self.deregister(io)
-    true
+    events
   end
 
   # def io_read(io, buffer, offset, length)
