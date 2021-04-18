@@ -54,7 +54,10 @@ VALUE method_scheduler_kqueue_wait(VALUE self) {
         n = kevent(kq, NULL, 0, events, KQUEUE_MAX_EVENTS, &timeout);
     }
 
-    // TODO: Check if n >= 0
+    if (n >= 0) {
+        // printf("n value: %d \n", n);
+    }
+    
     for (i = 0; i < n; i++) {
         event_flags = events[i].filter;
         if (event_flags & EVFILT_READ) {

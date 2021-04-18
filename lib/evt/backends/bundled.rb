@@ -110,7 +110,6 @@ class Evt::Bundled
   # @param duration [Numeric] The amount of time to sleep in seconds.
   def kernel_sleep(duration = nil)
     self.block(:sleep, duration)
-    true
   end
 
   # Block the calling fiber.
