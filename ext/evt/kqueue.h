@@ -21,13 +21,13 @@ VALUE method_scheduler_kqueue_register(VALUE self, VALUE io, VALUE interest) {
 
     if (ruby_interest & readable) {
         EV_SET(&events[0], fd, EVFILT_READ, EV_ADD|EV_ENABLE|EV_ONESHOT, 0, 0, (void*) io);
-        kevent(kq, &events[0], 1, NULL, 0, NULL); // TODO: Check the return value
     }
 
     if (ruby_interest & writable) {
         EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD|EV_ENABLE|EV_ONESHOT, 0, 0, (void*) io);
-        kevent(kq, &events[1], 1, NULL, 0, NULL); // TODO: Check the return value
     }
+
+    kevent(kq, &events, 2, NULL, 0, NULL); // TODO: Check the return value
 
     return Qnil;
 }
