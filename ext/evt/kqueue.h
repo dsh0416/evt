@@ -10,7 +10,7 @@ VALUE method_scheduler_kqueue_init(VALUE self) {
 }
 
 VALUE method_scheduler_kqueue_register(VALUE self, VALUE io, VALUE interest) {
-    struct kevent event;
+    struct kevent events[2];
     u_short event_flags = 0;
     ID id_fileno = rb_intern("fileno");
     int kq = NUM2INT(rb_iv_get(self, "@kq"));
@@ -20,15 +20,15 @@ VALUE method_scheduler_kqueue_register(VALUE self, VALUE io, VALUE interest) {
     int writable = NUM2INT(rb_const_get(rb_cIO, rb_intern("WRITABLE")));
 
     if (ruby_interest & readable) {
-        event_flags |= EVFILT_READ;
+        EV_SET(&events[0], fd, EVFILT_READ, EV_ADD|EV_ENABLE|EV_ONESHOT, 0, 0, (void*) io);
     }
 
     if (ruby_interest & writable) {
-        event_flags |= EVFILT_WRITE;
+        EV_SET(&events[1], fd, EVFILT_WRITE, EV_ADD|EV_ENABLE|EV_ONESHOT, 0, 0, (void*) io);
     }
 
-    EV_SET(&event, fd, event_flags, EV_ADD|EV_ENABLE|EV_ONESHOT, 0, 0, (void*) io);
-    kevent(kq, &event, 1, NULL, 0, NULL); // TODO: Check the return value
+    kevent(kq, &events, 2, NULL, 0, NULL); // TODO: Check the return value
+
     return Qnil;
 }
 
